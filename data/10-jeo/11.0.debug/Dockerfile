@@ -12,3 +12,5 @@ COPY ./extract_extra-addons.sh /
 RUN pip install wdb.server
 
 COPY ./entrypoint.sh /opt/odoo/resources/entrypoint.sh
+
+USER odoo
