@@ -8,7 +8,7 @@ COPY ./extract_dist-local-packages.sh /
 COPY ./extract_extra-addons.sh /
 
 # install wdb
-RUN pip install wdb.server
+RUN pip3 install wdb.server
 
 COPY ./entrypoint.sh /opt/odoo/resources/entrypoint.sh
 
