@@ -25,15 +25,20 @@ RUN pip3 install num2words wheel vobject qrcode git+https://github.com/OCA/openu
 RUN apt-get update -qq
 RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
-COPY ./requirements_aeroo_reports.txt /
-COPY ./requirements_OCA_web.txt /
-COPY ./requirements_odoo-argentina.txt /
-COPY ./requirements.txt /
-
-RUN pip3 install -r /requirements_aeroo_reports.txt
-RUN pip3 install -r /requirements_OCA_web.txt
-RUN pip3 install -r /requirements_odoo-argentina.txt
-RUN pip3 install -r /requirements.txt
+COPY ./requirements /req
+RUN pip3 install -r /req/requirements.txt
+RUN pip3 install -r /req/adhoc-account-payment.txt
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+RUN pip3 install -r /req/adhoc-argentina-reporting.txt
+RUN pip3 install -r /req/adhoc-odoo-argentina.txt
+RUN pip3 install -r /req/adhoc-argentina-sale.txt
+RUN pip3 install -r /req/adhoc-miscellaneous.txt
+RUN pip3 install -r /req/adhoc-odoo-support.txt
+RUN pip3 install -r /req/adhoc-product.txt
+RUN pip3 install -r /req/oca-server-tools.txt
+RUN pip3 install -r /req/oca-web.txt
+#RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
+RUN rm -r /req
 
 # crear cache para pyafipws
 RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
@@ -53,9 +58,6 @@ RUN mkdir -p /opt/odoo \
     && mkdir -p ${CUSTOM_ADDONS} \
     && mkdir -p ${EXTRA_ADDONS} \
     && chown -R odoo.odoo /opt/odoo
-
-# Mount persistent directories
-#VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
 
 # replace  entrypoint script and replace Odoo configuration file (new name)
 ENV RESOURCES /opt/odoo/resources/

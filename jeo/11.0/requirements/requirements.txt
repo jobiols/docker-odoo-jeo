@@ -1,3 +1,2 @@
-pysftp
 phonenumbers
 xlrd
