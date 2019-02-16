@@ -4,5 +4,5 @@
 UPDATE ir_cron SET active = FALSE;
 
 -- desactivar servidores de correo
-UPDATE fetchmail_server SET active = FALSE;
-UPDATE ir_mail_server SET active = FALSE;
+DELETE FROM fetchmail_server;
+DELETE FROM ir_mail_server;
