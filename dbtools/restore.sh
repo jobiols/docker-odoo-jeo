@@ -56,12 +56,12 @@ echo "restore to new created database"
 psql -U odoo -h db -d ${NEW_DBNAME} -q < /backup/tmp/dump.sql >/dev/null
 
 # si estoy en desarrollo desactivo la BD
-if [[ -v "$DEACTIVATE" ]]
+if [[ -z "$DEACTIVATE" ]]
 then
+    echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS --NOT-- DEACTIVATED"
+else
     psql -U odoo -h db -d ${NEW_DBNAME} -q < /deactivate.sql
     echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS DEACTIVATED"
-else
-    echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS --NOT-- DEACTIVATED"
 fi
 
 # eliminar el directorio /backup/temp
