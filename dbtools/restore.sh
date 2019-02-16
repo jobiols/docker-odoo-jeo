@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# este script corre dentro de la imagen
 
 set -e
 
@@ -41,14 +42,27 @@ fi
 
 export PGPASSWORD="odoo"
 
+echo "testing if database ${NEW_DBNAME} exists"
+if psql -U odoo -h db -lqt | cut -d \| -f 1 | grep -qw ${NEW_DBNAME}
+then
+    echo "droping database ${NEW_DBNAME}"
+    dropdb -U odoo -h db ${NEW_DBNAME}
+fi
+
 echo "create empty database ${NEW_DBNAME}"
 createdb -U odoo -h db -T template0 ${NEW_DBNAME}
 
 echo "restore to new created database"
 psql -U odoo -h db -d ${NEW_DBNAME} -q < /backup/tmp/dump.sql >/dev/null
 
-rm -rf /backup/tmp
+# si estoy en desarrollo desactivo la BD
+if [[ -v "$DEACTIVATE" ]]
+then
+    psql -U odoo -h db -d ${NEW_DBNAME} -q < /deactivate.sql
+    echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS DEACTIVATED"
+else
+    echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS --NOT-- DEACTIVATED"
+fi
 
-echo "--------------------"
-echo "  Restore finished  "
-echo "--------------------"
+# eliminar el directorio /backup/temp
+rm -rf /backup/tmp

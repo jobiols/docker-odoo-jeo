@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install wget unzip -y
 # instalar postgress client
 RUN apt-get update && apt-get install postgresql-client-9.4 -y --force-yes --no-install-recommends
 
-#ADD backup /usr/bin/backup
 ADD restore.sh /usr/bin/restore.sh
+ADD deactivate.sql /
 
 CMD "/usr/bin/restore.sh"
