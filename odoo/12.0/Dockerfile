@@ -39,7 +39,7 @@ RUN set -x; \
         && gpgconf --kill all \
         && rm -rf "$GNUPGHOME" \
         && apt-get update  \
-        && apt-get install -y postgresql-client-10 \
+        && apt-get install -y postgresql-client-11 \
         && rm -rf /var/lib/apt/lists/*
 
 # Install rtlcss (on Debian stretch)
