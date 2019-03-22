@@ -8,7 +8,8 @@ DELETE FROM fetchmail_server;
 DELETE FROM ir_mail_server;
 
 -- desactivar licencia
-delete from ir_config_parameter
-where key  = 'database.enterprise_code' or
+DELETE FROM ir_config_parameter
+WHERE
+  key  = 'database.enterprise_code' or
   key = 'database.expiration_date' or
   key = 'database.expiration_reason';
