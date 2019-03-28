@@ -63,6 +63,9 @@ RUN mkdir -p /opt/odoo \
 ENV RESOURCES /opt/odoo/resources/
 COPY ./resources/ ${RESOURCES}
 
+# Fix point_of_sale
+COPY ./resources/devices.js /usr/lib/python3/dist-packages/odoo/addons/point_of_sale/static/src/js/
+
 # change entrypoint
 ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
 CMD ["odoo"]
