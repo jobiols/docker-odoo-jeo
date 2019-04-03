@@ -41,11 +41,10 @@ RUN pip3 install -r /req/oca-web.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
-# permisos al usuario odoo para que pueda escribir desde pyafipws porque ahi
-# hay una base sqlite que se usa cuando se refrescan actividades, impuestos y
-# conceptos.
+# permisos para que pueda escribir desde pyafipws porque ahi hay una base
+# sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
 RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-RUN chown odoo.odoo /usr/local/lib/python3.5/dist-packages/pyafipws
+RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
 
 # Make auto_install = False for various modules
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
