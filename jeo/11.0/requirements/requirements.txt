@@ -1,2 +1,4 @@
 phonenumbers
 xlrd
+simplejson
+mercadopago
