@@ -13,3 +13,8 @@ WHERE
   key  = 'database.enterprise_code' or
   key = 'database.expiration_date' or
   key = 'database.expiration_reason';
+
+-- eliminar contrasenas
+UPDATE res_users
+  SET password_crypt = NULL
+WHERE id is not 1
