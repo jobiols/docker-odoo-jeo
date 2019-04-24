@@ -1,5 +1,6 @@
 FROM jobiols/odoo:12.0
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
+
 USER root
 
 # scripts to extract sources to host
@@ -8,8 +9,6 @@ COPY ./extract_dist-local-packages.sh /
 COPY ./extract_extra-addons.sh /
 
 # install wdb
-RUN pip3 install wdb.server
-
-COPY ./entrypoint.sh /opt/odoo/resources/entrypoint.sh
+RUN pip3 install wdb
 
 USER odoo
