@@ -22,7 +22,7 @@ then
 	exit 1
 fi
 
-cd odoo/12.0
+cd ../../odoo/12.0
 
 if ! ./make.sh;
 then
