@@ -6,7 +6,7 @@ set -e
 # eliminar el directorio /backup/temp si es que existe
 rm -rf /backup/tmp
 
-# si zipfile esta vacio busco el ultimo
+# si el parametro zipfile esta vacio busco el ultimo backup
 if [[ -z "${ZIPFILE}" ]]; then
     echo "Searching for latest backup"
     unset -v latest
