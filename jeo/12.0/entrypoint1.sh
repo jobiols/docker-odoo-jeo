@@ -23,6 +23,26 @@ check_config "db_port" "$PORT"
 check_config "db_user" "$USER"
 check_config "db_password" "$PASSWORD"
 
+#echo Trying to install unaccent extension > /dev/stderr
+#psql -d $DB_TEMPLATE -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'
+#echo Passed > /dev/stderr
+
+# Know if Postgres is listening
+function db_is_listening() {
+    psql --list > /dev/null 2>&1 || (sleep 1 && db_is_listening)
+}
+
+echo Waiting until the database server is listening... > /dev/stderr
+db_is_listening
+
+# Check pg user exist
+function pg_user_exist() {
+    psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PGUSER'" > /dev/null 2>&1 || (sleep 1 && pg_user_exist)
+}
+
+echo Waiting until the pg user $PGUSER is created... > /dev/stderr
+pg_user_exist
+
 case "$1" in
     -- | odoo)
         shift
