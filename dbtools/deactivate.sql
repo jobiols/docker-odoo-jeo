@@ -17,4 +17,4 @@ WHERE
 -- eliminar contrasenas
 UPDATE res_users
   SET password_crypt = NULL
-WHERE id is not 1
+WHERE id <> 1
