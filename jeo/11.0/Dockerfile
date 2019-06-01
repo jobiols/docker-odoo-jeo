@@ -16,6 +16,11 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
     && pip3 install --no-cache-dir --upgrade pip setuptools
 
+# requiasites multisite yelizariev
+RUN apt-get -qq update && apt-get install -yqq \
+    ruby-full build-essential rubygems \
+    && gem install sass
+
 RUN pip3 install num2words wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
     && apt-get purge -yqq build-essential '*-dev' \
     && apt-get -yqq autoremove \
@@ -37,6 +42,7 @@ RUN pip3 install -r /req/adhoc-odoo-support.txt
 RUN pip3 install -r /req/adhoc-product.txt
 RUN pip3 install -r /req/oca-server-tools.txt
 RUN pip3 install -r /req/oca-web.txt
+RUN pip3 install -r /req/woocommerce-connector.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
 RUN pip3 install -r /req/oca-connector.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
@@ -51,6 +57,7 @@ RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
 
 # Make auto_install = False for various modules
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
+RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/l10n_ar/__manifest__.py
 
 # create directory for odoo files
 ENV ETC_DIR /opt/odoo/etc
