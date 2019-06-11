@@ -1,4 +1,4 @@
--- Script para desactivar base de datos
+-- Script para desactivar base de datos, la vuelve trial con un mes de uso.
 
 -- desactivar tareas cron
 UPDATE ir_cron SET active = FALSE;
@@ -15,6 +15,6 @@ WHERE
   key = 'database.expiration_reason';
 
 -- eliminar contrasenas
-UPDATE res_users
-  SET password_crypt = NULL
-WHERE id <> 1
+--UPDATE res_users
+--  SET password_crypt = NULL
+--WHERE id <> 1
