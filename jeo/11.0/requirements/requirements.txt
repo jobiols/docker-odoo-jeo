@@ -3,3 +3,4 @@ xlrd
 simplejson
 mercadopago
 Pigments
+requests_oauthlib
