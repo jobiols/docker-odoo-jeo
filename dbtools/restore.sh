@@ -8,7 +8,7 @@ rm -rf /backup/tmp
 
 # si el parametro zipfile esta vacio busco el ultimo backup
 if [[ -z "${ZIPFILE}" ]]; then
-    echo "Searching for latest backup"
+    echo "Searching for latest local backup"
     unset -v latest
     for file in "/backup"/*; do
       [[ $file -nt $latest ]] && ZIPFILE=$file
@@ -22,6 +22,7 @@ unzip -q -d /backup/tmp ${ZIPFILE}
 
 if [ -d /backup/tmp/filestore ]
   then
+    echo "Restoring filestore"
     rm -rf /filestore/${NEW_DBNAME}
     mkdir /filestore/${NEW_DBNAME}
     cp -r /backup/tmp/filestore/* /filestore/${NEW_DBNAME}/
@@ -32,6 +33,7 @@ if [ -d /backup/tmp/filestore ]
         exit 2
     fi
     echo "Filestore restored succesfully"
+    echo
 fi
 
 if [ ! -f /backup/tmp/dump.sql ]
@@ -42,17 +44,25 @@ fi
 
 export PGPASSWORD="odoo"
 
-echo "testing if database ${NEW_DBNAME} exists"
+sql="SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${NEW_DBNAME}';"
+echo "Killing backend connections to ${NEW_DBNAME}"
+if psql -U odoo -h db -d postgres -c "$sql"
+then
+    echo "Connection is clean"
+    echo
+fi
+
+echo "Testing if database ${NEW_DBNAME} exists"
 if psql -U odoo -h db -lqt | cut -d \| -f 1 | grep -qw ${NEW_DBNAME}
 then
-    echo "droping database ${NEW_DBNAME}"
+    echo "Droping database ${NEW_DBNAME}"
     dropdb -U odoo -h db ${NEW_DBNAME}
 fi
 
-echo "create empty database ${NEW_DBNAME}"
+echo "Create empty database ${NEW_DBNAME}"
 createdb -U odoo -h db -T template0 ${NEW_DBNAME}
 
-echo "restore to new created database"
+echo "Restoring to new created database"
 psql -U odoo -h db -d ${NEW_DBNAME} -q < /backup/tmp/dump.sql >/dev/null
 
 # si estoy en desarrollo desactivo la BD
