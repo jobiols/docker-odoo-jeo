@@ -6,5 +6,5 @@ set value = 'trial'
 where key = 'database.expiration_reason';
 
 update ir_config_parameter
-set value = current_date + integer '30'
+set value = current_date + integer '31'
 where key = 'database.expiration_date';
