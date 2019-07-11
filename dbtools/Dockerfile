@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install wget unzip -y
 RUN apt-get update && apt-get install postgresql-client-9.4 -y --force-yes --no-install-recommends
 
 ADD restore.sh /usr/bin/restore.sh
+ADD extend.sh /usr/bin/extend.sh
 ADD deactivate.sql /
+ADD extend.sql /
 
 CMD "/usr/bin/restore.sh"
