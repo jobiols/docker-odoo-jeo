@@ -30,6 +30,9 @@ RUN pip3 install num2words wheel vobject qrcode git+https://github.com/OCA/openu
 RUN apt-get update -qq
 RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
+# requisites for letsencrypt
+RUN apt-get install openssl
+
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/adhoc-account-payment.txt
@@ -47,6 +50,7 @@ RUN pip3 install -r /req/oca-rest-framework.txt
 RUN pip3 install -r /req/oca-connector.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
+RUN pip3 install -r /req/letsencrypt-requirements.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
