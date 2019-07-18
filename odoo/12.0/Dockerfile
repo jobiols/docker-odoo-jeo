@@ -39,7 +39,7 @@ RUN set -x; \
         && gpgconf --kill all \
         && rm -rf "$GNUPGHOME" \
         && apt-get update  \
-        && apt-get install -y postgresql-client-10 \
+        && apt-get install -y postgresql-client-11 \
         && rm -rf /var/lib/apt/lists/*
 
 # Install rtlcss (on Debian stretch)
@@ -58,7 +58,7 @@ RUN set -x;\
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
-ARG ODOO_RELEASE=20190625
+ARG ODOO_RELEASE=20190717
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
         && dpkg --force-depends -i odoo.deb \
