@@ -49,6 +49,7 @@ RUN pip3 install -r /req/woocommerce-connector.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
 RUN pip3 install -r /req/oca-connector.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
+RUN pip3 install -r /req/oca-geospatial.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
 RUN pip3 install -r /req/letsencrypt-requirements.txt
 RUN rm -r /req
