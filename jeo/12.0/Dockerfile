@@ -5,11 +5,34 @@ USER root
 
 COPY ./entrypoint.sh /
 
+# config
+RUN mkdir -p /opt/odoo/etc \
+    && chown -R odoo /opt/odoo/etc
+ENV ODOO_RC /opt/odoo/etc/odoo.conf
+
+# filestore
+RUN mkdir -p /opt/odoo/data \
+    && chown -R odoo /opt/odoo/data
+
+# log
+RUN mkdir -p /var/log/odoo \
+    && chown -R odoo /var/log/odoo
+
+# backup
+RUN mkdir -p /var/odoo/backups \
+    && chown -R odoo /var/odoo/backups
+
+# addons
+RUN mkdir -p /opt/odoo/custom-addons \
+    && chown -R odoo /opt/odoo/custom-addons
+
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
 # libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
-#RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-#    git ssh wget unzip iputils-ping \
-#    python3-dev build-essential \
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    git \
+    python3-dev build-essential
+
+#    ssh wget unzip iputils-ping \
 #    libldap2-dev libsasl2-dev \
 #    libcups2-dev \
 #    locales \
@@ -18,10 +41,8 @@ COPY ./entrypoint.sh /
 #    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
 #    && pip3 install --no-cache-dir --upgrade pip setuptools
 
-#COPY ./entrypoint.sh /
-
-
-#RUN pip3 install num2words wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
+RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
+# num2words wheel vobject qrcode
 #    && apt-get purge -yqq build-essential '*-dev' \
 #    && apt-get -yqq autoremove \
 #    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -30,15 +51,12 @@ COPY ./entrypoint.sh /
 #RUN apt-get update -qq
 #RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
-#COPY ./requirements_aeroo_reports.txt /
-#COPY ./requirements_OCA_web.txt /
-#COPY ./requirements_odoo-argentina.txt /
-#COPY ./requirements.txt /
+COPY ./requirements /req
 
-#RUN pip3 install -r /requirements_aeroo_reports.txt
-#RUN pip3 install -r /requirements_OCA_web.txt
-#RUN pip3 install -r /requirements_odoo-argentina.txt
-#RUN pip3 install -r /requirements.txt
+RUN pip3 install -r /req/requirements_aeroo_reports.txt
+#RUN pip3 install -r /req/requirements_OCA_web.txt
+RUN pip3 install -r /req/requirements_odoo-argentina.txt
+RUN pip3 install -r /req/requirements.txt
 
 # crear cache para pyafipws
 #RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache

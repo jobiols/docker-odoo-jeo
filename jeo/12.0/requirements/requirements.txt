@@ -1,6 +1,6 @@
 pysftp
-phonenumbers
-xlrd
-simplejson
-mercadopago
-Pigments
+#phonenumbers
+#xlrd
+#simplejson
+#mercadopago
+#Pigments

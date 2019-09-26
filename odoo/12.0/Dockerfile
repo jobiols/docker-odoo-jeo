@@ -27,7 +27,10 @@ RUN set -x; \
         && echo '7e35a63f9db14f93ec7feeb0fce76b30c08f2057 wkhtmltox.deb' | sha1sum -c - \
         && dpkg --force-depends -i wkhtmltox.deb\
         && apt-get -y install -f --no-install-recommends \
-        && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
+        && rm -rf /var/lib/apt/lists/* wkhtmltox.deb \
+        && curl https://bootstrap.pypa.io/get-pip.py >pi.py \
+        && python3 pi.py \
+        && rm pi.py
 
 # install latest postgresql-client
 RUN set -x; \
