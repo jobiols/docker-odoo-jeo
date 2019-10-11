@@ -4,3 +4,9 @@ simplejson
 mercadopago
 Pigments
 requests_oauthlib
+
+# modulo del restaurante nato
+#netifaces
+
+# ot de amic
+pdf2image
