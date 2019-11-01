@@ -16,10 +16,10 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
     && pip3 install --no-cache-dir --upgrade pip setuptools
 
-# requiasites multisite yelizariev
-RUN apt-get -qq update && apt-get install -yqq \
-    ruby-full build-essential rubygems \
-    && gem install sass
+# requisites multisite yelizariev
+#RUN apt-get -qq update && apt-get install -yqq \
+#    ruby-full build-essential rubygems \
+#    && gem install sass
 
 RUN pip3 install num2words wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
     && apt-get purge -yqq build-essential '*-dev' \
@@ -31,7 +31,7 @@ RUN apt-get update -qq
 RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
 # requisites for letsencrypt
-RUN apt-get install openssl
+# RUN apt-get install openssl
 
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt

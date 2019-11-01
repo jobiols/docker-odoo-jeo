@@ -52,11 +52,21 @@ RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 #RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req
-
-RUN pip3 install -r /req/requirements_aeroo_reports.txt
-#RUN pip3 install -r /req/requirements_OCA_web.txt
-RUN pip3 install -r /req/requirements_odoo-argentina.txt
 RUN pip3 install -r /req/requirements.txt
+RUN pip3 install -r /req/adhoc-account-payment.txt
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+RUN pip3 install -r /req/adhoc-argentina-reporting.txt
+RUN pip3 install -r /req/adhoc-odoo-argentina.txt
+RUN pip3 install -r /req/adhoc-argentina-sale.txt
+RUN pip3 install -r /req/adhoc-miscellaneous.txt
+RUN pip3 install -r /req/adhoc-odoo-support.txt
+RUN pip3 install -r /req/adhoc-product.txt
+RUN pip3 install -r /req/oca-server-tools.txt
+RUN pip3 install -r /req/oca-web.txt
+RUN pip3 install -r /req/oca-rest-framework.txt
+RUN pip3 install -r /req/oca-partner-contact.txt
+#RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
+RUN rm -r /req
 
 # crear cache para pyafipws
 #RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache

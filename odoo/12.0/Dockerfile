@@ -1,5 +1,6 @@
 FROM debian:stretch
 LABEL maintainer="Odoo S.A. <info@odoo.com>"
+LABEL create=2019-11-01
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG C.UTF-8
@@ -61,7 +62,7 @@ RUN set -x;\
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
-ARG ODOO_RELEASE=20191011
+ARG ODOO_RELEASE=latest
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
         && dpkg --force-depends -i odoo.deb \
