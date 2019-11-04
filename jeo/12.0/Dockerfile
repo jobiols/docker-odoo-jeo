@@ -176,29 +176,34 @@ RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 
 # Make auto_install = False for various modules
-#RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
+RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
 
 # create directory for odoo files
-#ENV ETC_DIR /opt/odoo/etc
-#ENV DATA_DIR /opt/odoo/data
-#ENV CUSTOM_ADDONS /opt/odoo/custom-addons
-#ENV EXTRA_ADDONS /opt/odoo/extra-addons
-#RUN    mkdir -p ${ETC_DIR} \
-#    && mkdir -p ${DATA_DIR} \
-#    && mkdir -p ${CUSTOM_ADDONS} \
-#    && mkdir -p ${EXTRA_ADDONS} \
-#    && chown -R odoo.odoo /opt/odoo
+ENV CONFIG /opt/odoo/etc
+ENV DATA_DIR /opt/odoo/data
+ENV CUSTOM_ADDONS /opt/odoo/custom-addons
+RUN    mkdir -p ${CONFIG} \
+    && mkdir -p ${DATA_DIR} \
+    && mkdir -p ${CUSTOM_ADDONS} \
+    && chown -R odoo.odoo /opt/odoo
 
 # Mount persistent directories
 #VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
 
-# replace  entrypoint script and replace Odoo configuration file (new name)
-#ENV RESOURCES /opt/odoo/resources/
-#COPY ./resources/ ${RESOURCES}
+# Definir config, log, data_dir y entrypoint.sh
+COPY ./odoo.conf ${CONFIG}
+COPY ./resources/entrypoint.sh ./entrypoint.sh
+RUN chown odoo /etc/odoo/odoo.conf
+ENV ODOO_CONF = $CONFIG/odoo.conf
 
-# change entrypoint
-#ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
-#CMD ["odoo"]
+#RUN mkdir -p /mnt/extra-addons \
+#        && chown -R odoo /mnt/extra-addons
+#VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+
+# Set the default config file
+ENV ODOO_RC /opt/odoo/etc/odoo.conf
+
+CMD ["odoo"]
 
 # Variables used by the launch scripts
 #ENV \
@@ -234,8 +239,5 @@ RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 #    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
 #    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
 #    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
-
-# odoo server use this env var as default conf, check if v9 or v10 rename it
-#ENV ODOO_RC $ODOO_CONF
 
 USER odoo
