@@ -2,8 +2,6 @@
 # from odoo entrypoint
 set -e
 
-echo "arranca entry point ----------------------------------------------------"
-
 # set odoo database host, port, user and password
 : ${PGHOST:=$DB_PORT_5432_TCP_ADDR}
 : ${PGPORT:=$DB_PORT_5432_TCP_PORT}
@@ -11,43 +9,18 @@ echo "arranca entry point ----------------------------------------------------"
 : ${PGPASSWORD:=$DB_ENV_POSTGRES_PASSWORD}
 export PGHOST PGPORT PGUSER PGPASSWORD
 
-echo $PGHOST $PGPORT $PGUSER $PGPASSWORD
-
-# copy_sources
-function copy_sources {
-    echo "Making a copy of Extra Addons to Custom addons"
-    cp -R $EXTRA_ADDONS/* $CUSTOM_ADDONS
-}
-
-if [ "$*" == "copy_sources" ]; then
-    copy_sources
-    exit 1
-fi
-
-# copy_nginx_conf
-# function copy_nginx_conf {
-#     echo "Making a copy of nginx data to odoo data folder"
-#     cp -R $RESOURCES/nginx $DATA_DIR/
-# }
-
-# TODO chequear si existe y no sobre escribir?
-# copy_nginx_conf
-
 # Ensure proper content for $UNACCENT
 if [ "$UNACCENT" != "True" ]; then
     UNACCENT=False
 fi
 
-# get DB max connections, if you set workers, each worker can have db_maxconn, and total connectios need to be less than PG_MAX_CONNECTIONS
+# get DB max connections, if you set workers, each worker can have db_maxconn,
+# and total connectios need to be less than PG_MAX_CONNECTIONS
 # by default postgres allow 100
-#PG_MAX_CONNECTIONS=100
-echo holaantes
-
-#if (($WORKERS > 0)); then
-#    DB_MAXCONN=`expr $PG_MAX_CONNECTIONS / $WORKERS`
-#fi
-
-echo hola
+PG_MAX_CONNECTIONS=100
+if (($WORKERS > 0)); then
+    DB_MAXCONN=`expr $PG_MAX_CONNECTIONS / $WORKERS`
+fi
 
 if (($WORKERS <= 0)); then
     DB_MAXCONN=32
@@ -55,15 +28,9 @@ fi
 
 ODOO_ADDONS="/usr/lib/python3/dist-packages/odoo/addons"
 
-echo $ODOO_ADDONS
-
 # we add sort to find so ingadhoc paths are located before the others and prefered by odoo
 echo Patching configuration > /dev/stderr
 addons=$(find $CUSTOM_ADDONS $EXTRA_ADDONS -mindepth 1 -maxdepth 1 -type d | sort | tr '\n' ',')$ODOO_ADDONS
-
-echo --------
-echo $addons
-echo --------
 
 echo "
 [options]
@@ -114,18 +81,17 @@ afip_homo_pkey_file = $AFIP_HOMO_PKEY_FILE
 afip_homo_cert_file = $AFIP_HOMO_CERT_FILE
 afip_prod_pkey_file = $AFIP_PROD_PKEY_FILE
 afip_prod_cert_file = $AFIP_PROD_CERT_FILE
-
-" > $CONFIG
+" > $ODOO_CONF
 
 # default mail catchall domain, lo usamos para que se establezca por defecto en los containers
 # y que luego el usuario si quiere lo pueda sobreescribir con el parametro
 if [ "$MAIL_CATCHALL_DOMAIN" != "" ]; then
-    echo "mail.catchall.domain = $MAIL_CATCHALL_DOMAIN" >> $CONFIG
+    echo "mail.catchall.domain = $MAIL_CATCHALL_DOMAIN" >> $ODOO_CONF
 fi
 
 # If database is available, use it
 if [ "$DATABASE" != "" ]; then
-    echo "db_name = $DATABASE" >> $CONFIG
+    echo "db_name = $DATABASE" >> $ODOO_CONF
 fi
 
 # Know if Postgres is listening
@@ -148,18 +114,6 @@ pg_user_exist
 if [ "${UNACCENT,,}" == "true" ]; then
     echo Trying to install unaccent extension > /dev/stderr
     psql -d $DB_TEMPLATE -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'
-fi
-
-# por compatibilidad para atras, si mandamos true, entonces manda fix sin pasar
-# bds, si mandamos otra cosa, entonces pasamos eso como bds, esto es necesario sobre todo porque
-# ahora no compartimos posgres y las bds son visibles, luego lo podremos mejorar con usuarios pero igual
-# puede ser un problema porque se compartiría dentro de mismo usuario
-if [ "${FIXDBS,,}" == "true" ]; then
-    echo Trying to fix databases > /dev/stderr
-    $ODOO_SERVER fixdb --workers=0 --no-xmlrpc
-elif [ "$FIXDBS" != "" ] && [ "${FIXDBS,,}" != "false" ]; then
-    echo Trying to fix databases > /dev/stderr
-    $ODOO_SERVER fixdb --workers=0 --no-xmlrpc -d $FIXDBS
 fi
 
 # Run server

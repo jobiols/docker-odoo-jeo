@@ -179,65 +179,64 @@ RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
 
 # create directory for odoo files
-ENV CONFIG /opt/odoo/etc
+ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
 ENV CUSTOM_ADDONS /opt/odoo/custom-addons
-RUN    mkdir -p ${CONFIG} \
+ENV EXTRA_ADDONS /opt/odoo/extra-addons
+RUN mkdir -p /opt/odoo \
+    && mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
     && mkdir -p ${CUSTOM_ADDONS} \
+    && mkdir -p ${EXTRA_ADDONS} \
     && chown -R odoo.odoo /opt/odoo
 
-# Mount persistent directories
-#VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
-
 # Definir config, log, data_dir y entrypoint.sh
-COPY ./odoo.conf ${CONFIG}
-COPY ./resources/entrypoint.sh ./entrypoint.sh
-RUN chown odoo /etc/odoo/odoo.conf
-ENV ODOO_CONF = $CONFIG/odoo.conf
+COPY ./odoo.conf $ETC_DIR
+RUN chown odoo /opt/odoo/etc/odoo.conf
 
-#RUN mkdir -p /mnt/extra-addons \
-#        && chown -R odoo /mnt/extra-addons
-#VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+COPY ./resources/entrypoint.sh ./entrypoint.sh
+ENV ODOO_CONF /opt/odoo/etc/odoo.conf
 
 # Set the default config file
-ENV ODOO_RC /opt/odoo/etc/odoo.conf
+ENV ODOO_RC $ETC_DIR/odoo.conf
 
 CMD ["odoo"]
 
 # Variables used by the launch scripts
-#ENV \
-#    DB_TEMPLATE=template1 \
-#    PGUSER=odoo \
-#    PGPASSWORD=odoo \
-#    PGHOST=db
-#    ODOO_SERVER=odoo \
-#    ODOO_CONF=/opt/odoo/etc/odoo.conf \
-#    FIXDBS=False \
-#    WAIT_PG=True \
-#    PG_MAX_CONNECTIONS=100 \
-#    # odoo conf variables
-#    MAX_CRON_THREADS=1 \
-#    SMTP_SERVER=localhost \
-#    SMTP_PORT=25 \
-#    SMTP_SSL=False \
-#    SMTP_USER=False \
-#    SMTP_PASSWORD=False \
-#    UNACCENT=True \
-#    WORKERS=6 \
-#    ADMIN_PASSWORD=admin \
-#    DISABLE_SESSION_GC=false \
-#    PROXY_MODE=True \
-#    WITHOUT_DEMO=True \
-#    DBFILTER=.* \
-#    LIMIT_TIME_CPU=1600 \
-#    LIMIT_TIME_REAL=3200 \
-#    LIMIT_MEMORY_HARD=2684354560 \
-#    LIMIT_MEMORY_SOFT=2147483648 \
-#    AEROO_DOCS_HOST=aeroo \
-#    AFIP_HOMO_PKEY_FILE=/opt/odoo/backups/homo.pkey \
-#    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
-#    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
-#    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
+ENV \
+    DB_TEMPLATE=template1 \
+    PGUSER=odoo \
+    PGPASSWORD=odoo \
+    PGHOST=db \
+    ODOO_SERVER=odoo \
+    ODOO_CONF=/opt/odoo/etc/odoo.conf \
+    FIXDBS=False \
+    WAIT_PG=True \
+    PG_MAX_CONNECTIONS=100 \
+    # odoo conf variables
+    MAX_CRON_THREADS=1 \
+    SMTP_SERVER=localhost \
+    SMTP_PORT=25 \
+    SMTP_SSL=False \
+    SMTP_USER=False \
+    SMTP_PASSWORD=False \
+    UNACCENT=True \
+    WORKERS=6 \
+    ADMIN_PASSWORD=admin \
+    DISABLE_SESSION_GC=false \
+    PROXY_MODE=True \
+    WITHOUT_DEMO=True \
+    DBFILTER=.* \
+    LIMIT_TIME_CPU=1600 \
+    LIMIT_TIME_REAL=3200 \
+    LIMIT_MEMORY_HARD=2684354560 \
+    LIMIT_MEMORY_SOFT=2147483648 \
+    AEROO_DOCS_HOST=aeroo \
+    AFIP_HOMO_PKEY_FILE=/opt/odoo/backups/homo.pkey \
+    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
+    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
+    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert
+
+ENTRYPOINT ["/entrypoint.sh"]
 
 USER odoo
