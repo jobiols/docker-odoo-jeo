@@ -89,7 +89,7 @@ CMD ["odoo"]
 ############################ Fin de base image ################################
 ###############################################################################
 
-FROM base-images
+FROM base-image
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
 
 USER root
