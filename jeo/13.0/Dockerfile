@@ -1,4 +1,4 @@
-FROM odoo:12.0
+FROM odoo:13.0
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
 
 USER root
@@ -27,7 +27,8 @@ RUN mkdir -p /opt/odoo/custom-addons \
     && chown -R odoo /opt/odoo/custom-addons
 
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
-# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
+# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
+# libcups2-dev is for aeroo. Then install locales and later clean everything
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git \
     python3-dev build-essential
@@ -56,7 +57,6 @@ RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/adhoc-account-payment.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN pip3 install -r /req/adhoc-argentina-reporting.txt
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN pip3 install -r /req/adhoc-argentina-sale.txt
 RUN pip3 install -r /req/adhoc-miscellaneous.txt
 RUN pip3 install -r /req/adhoc-odoo-support.txt
@@ -66,28 +66,29 @@ RUN pip3 install -r /req/oca-web.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
+RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN rm -r /req
 
 # crear cache para pyafipws
-RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
+#RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
+#RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 
 # Make auto_install = False for various modules
-#RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
+RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
 
 # create directory for odoo files
-#ENV ETC_DIR /opt/odoo/etc
-#ENV DATA_DIR /opt/odoo/data
-#ENV CUSTOM_ADDONS /opt/odoo/custom-addons
-#ENV EXTRA_ADDONS /opt/odoo/extra-addons
-#RUN    mkdir -p ${ETC_DIR} \
-#    && mkdir -p ${DATA_DIR} \
-#    && mkdir -p ${CUSTOM_ADDONS} \
-#    && mkdir -p ${EXTRA_ADDONS} \
-#    && chown -R odoo.odoo /opt/odoo
+ENV ETC_DIR /opt/odoo/etc
+ENV DATA_DIR /opt/odoo/data
+ENV CUSTOM_ADDONS /opt/odoo/custom-addons
+ENV EXTRA_ADDONS /opt/odoo/extra-addons
+RUN    mkdir -p ${ETC_DIR} \
+    && mkdir -p ${DATA_DIR} \
+    && mkdir -p ${CUSTOM_ADDONS} \
+    && mkdir -p ${EXTRA_ADDONS} \
+    && chown -R odoo.odoo /opt/odoo
 
 # Mount persistent directories
-#VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
+VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
 
 # replace  entrypoint script and replace Odoo configuration file (new name)
 #ENV RESOURCES /opt/odoo/resources/

@@ -1,4 +1,4 @@
-FROM jobiols/odoo:11.0
+FROM odoo:11.0
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
 
 USER root
@@ -21,7 +21,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 #    ruby-full build-essential rubygems \
 #    && gem install sass
 
-RUN pip3 install num2words wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
+RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
     && apt-get purge -yqq build-essential '*-dev' \
     && apt-get -yqq autoremove \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -122,7 +122,7 @@ ENV \
     AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
     DB_TEMPLATE=template1
 
-# odoo server use this env var as default conf, check if v9 or v10 rename it
+# odoo server use this env var as default conf
 ENV ODOO_RC $ODOO_CONF
 
 USER odoo
