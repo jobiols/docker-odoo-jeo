@@ -119,9 +119,6 @@ RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/
 RUN apt-get update -qq
 RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
-# requisites for letsencrypt
-# RUN apt-get install openssl
-
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/adhoc-account-payment.txt
@@ -166,8 +163,8 @@ RUN mkdir -p /opt/odoo \
     && chown -R odoo.odoo /opt/odoo
 
 # replace  entrypoint script and replace Odoo configuration file (new name)
-ENV RESOURCES /opt/odoo/resources/
-COPY ./resources/ ${RESOURCES}
+#ENV RESOURCES /opt/odoo/resources/
+COPY ./resources/ /opt/odoo/resources/
 
 # Fix point_of_sale
 COPY ./resources/devices.js /usr/lib/python3/dist-packages/odoo/addons/point_of_sale/static/src/js/
