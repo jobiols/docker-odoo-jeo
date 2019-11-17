@@ -164,6 +164,7 @@ RUN pip3 install -r /req/adhoc-argentina-sale.txt
 RUN pip3 install -r /req/adhoc-miscellaneous.txt
 RUN pip3 install -r /req/adhoc-odoo-support.txt
 RUN pip3 install -r /req/adhoc-product.txt
+RUN pip3 install -r /req/adhoc-website.txt
 RUN pip3 install -r /req/oca-server-tools.txt
 RUN pip3 install -r /req/oca-web.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
