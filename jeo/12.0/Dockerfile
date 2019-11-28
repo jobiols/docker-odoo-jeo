@@ -169,6 +169,7 @@ RUN pip3 install -r /req/oca-server-tools.txt
 RUN pip3 install -r /req/oca-web.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
+RUN pip3 install -r /req/odoo-com.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
 RUN rm -r /req
 
