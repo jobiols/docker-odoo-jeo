@@ -1,11 +1,8 @@
-FROM debian:stretch-slim AS base-image
+FROM debian:buster-slim AS base-image
 MAINTAINER Odoo S.A. <info@odoo.com>
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG C.UTF-8
-
-# Use backports to avoid install some libs with pip
-RUN echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/backports.list
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN set -x; \
@@ -16,8 +13,9 @@ RUN set -x; \
             dirmngr \
             fonts-noto-cjk \
             gnupg \
-            libssl1.0-dev \
+            libssl-dev \
             node-less \
+            npm \
             python3-num2words \
             python3-pip \
             python3-phonenumbers \
@@ -36,7 +34,7 @@ RUN set -x; \
 
 # install latest postgresql-client
 RUN set -x; \
-        echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > etc/apt/sources.list.d/pgdg.list \
+        echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > etc/apt/sources.list.d/pgdg.list \
         && export GNUPGHOME="$(mktemp -d)" \
         && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
         && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
@@ -47,10 +45,14 @@ RUN set -x; \
         && apt-get install -y postgresql-client \
         && rm -rf /var/lib/apt/lists/*
 
+# Install rtlcss (on Debian buster)
+RUN set -x; \
+    npm install -g rtlcss
+
 # Install Odoo
-ENV ODOO_VERSION 11.0
+ENV ODOO_VERSION 13.0
 ARG ODOO_RELEASE=20191022
-ARG ODOO_SHA=eea3333a3d7402c4ff63a09d9da145a6a4a3bab2
+ARG ODOO_SHA=09eb205ed1e4348dd4762263cafa9819e17dba7e
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
         && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -92,28 +94,50 @@ MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
 
 USER root
 
+COPY ./entrypoint.sh /
+
+# config
+RUN mkdir -p /opt/odoo/etc \
+    && chown -R odoo /opt/odoo/etc
+ENV ODOO_RC /opt/odoo/etc/odoo.conf
+
+# filestore
+RUN mkdir -p /opt/odoo/data \
+    && chown -R odoo /opt/odoo/data
+
+# log
+RUN mkdir -p /var/log/odoo \
+    && chown -R odoo /var/log/odoo
+
+# backup
+RUN mkdir -p /var/odoo/backups \
+    && chown -R odoo /var/odoo/backups
+
+# addons
+RUN mkdir -p /opt/odoo/custom-addons \
+    && chown -R odoo /opt/odoo/custom-addons
+
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
-# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
+# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
+# libcups2-dev is for aeroo. Then install locales and later clean everything
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    git nano htop ssh wget unzip iputils-ping telnet \
-    python3-dev build-essential \
-    libldap2-dev libsasl2-dev \
-    libcups2-dev \
-    locales \
-    && locale-gen en_US.UTF-8 && update-locale \
-    && locale-gen es_AR.UTF-8 && update-locale \
-    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
-    && pip3 install --no-cache-dir --upgrade pip setuptools
+    git \
+    python3-dev build-essential
 
-# requisites multisite yelizariev
-#RUN apt-get -qq update && apt-get install -yqq \
-#    ruby-full build-essential rubygems \
-#    && gem install sass
+#    ssh wget unzip iputils-ping \
+#    libldap2-dev libsasl2-dev \
+#    libcups2-dev \
+#    locales \
+#    && locale-gen en_US.UTF-8 && update-locale \
+#    && locale-gen es_AR.UTF-8 && update-locale \
+#    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
+#    && pip3 install --no-cache-dir --upgrade pip setuptools
 
-RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
-    && apt-get purge -yqq build-essential '*-dev' \
-    && apt-get -yqq autoremove \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
+# num2words wheel vobject qrcode
+#    && apt-get purge -yqq build-essential '*-dev' \
+#    && apt-get -yqq autoremove \
+#    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # requisites for M2Crypto
 RUN apt-get update -qq
@@ -124,91 +148,83 @@ RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/adhoc-account-payment.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN pip3 install -r /req/adhoc-argentina-reporting.txt
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN pip3 install -r /req/adhoc-argentina-sale.txt
 RUN pip3 install -r /req/adhoc-miscellaneous.txt
 RUN pip3 install -r /req/adhoc-odoo-support.txt
 RUN pip3 install -r /req/adhoc-product.txt
 RUN pip3 install -r /req/oca-server-tools.txt
 RUN pip3 install -r /req/oca-web.txt
-RUN pip3 install -r /req/woocommerce-connector.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
-RUN pip3 install -r /req/oca-connector.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
-RUN pip3 install -r /req/oca-geospatial.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
-RUN pip3 install -r /req/letsencrypt-requirements.txt
+RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN rm -r /req
 
-# crear cache para pyafipws lo necesita para actualizar desde padron y darle
-# permisos para que pueda escribir desde pyafipws porque ahi hay una base
-# sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
-RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
+# crear cache para pyafipws
+#RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
+#RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 
 # Make auto_install = False for various modules
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
-RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/l10n_ar/__manifest__.py
 
 # create directory for odoo files
 ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
 ENV CUSTOM_ADDONS /opt/odoo/custom-addons
 ENV EXTRA_ADDONS /opt/odoo/extra-addons
-RUN mkdir -p /opt/odoo \
-    && mkdir -p ${ETC_DIR} \
+RUN    mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
     && mkdir -p ${CUSTOM_ADDONS} \
     && mkdir -p ${EXTRA_ADDONS} \
     && chown -R odoo.odoo /opt/odoo
 
+# Mount persistent directories
+VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
+
 # replace  entrypoint script and replace Odoo configuration file (new name)
 #ENV RESOURCES /opt/odoo/resources/
-COPY ./resources/ /opt/odoo/resources/
-
-# Fix point_of_sale
-COPY ./resources/devices.js /usr/lib/python3/dist-packages/odoo/addons/point_of_sale/static/src/js/
+#COPY ./resources/ ${RESOURCES}
 
 # change entrypoint
-ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
-CMD ["odoo"]
+#ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
+#CMD ["odoo"]
 
 # Variables used by the launch scripts
-ENV \
-    ODOO_SERVER=odoo \
-    ODOO_CONF=/opt/odoo/etc/odoo.conf \
-    FIXDBS=False \
-    WAIT_PG=True \
-    PG_MAX_CONNECTIONS=100 \
-    # odoo conf variables
-    MAX_CRON_THREADS=1 \
-    SMTP_SERVER=localhost \
-    SMTP_PORT=25 \
-    SMTP_SSL=False \
-    SMTP_USER=False \
-    SMTP_PASSWORD=False \
-    UNACCENT=True \
-    PGUSER=odoo \
-    PGPASSWORD=odoo \
-    PGHOST=db \
-    WORKERS=6 \
-    ADMIN_PASSWORD=admin \
-    DISABLE_SESSION_GC=false \
-    PROXY_MODE=True \
-    WITHOUT_DEMO=True \
-    DBFILTER=.* \
-    LIMIT_TIME_CPU=1600 \
-    LIMIT_TIME_REAL=3200 \
-    LIMIT_MEMORY_HARD=2684354560 \
-    LIMIT_MEMORY_SOFT=2147483648 \
-    AEROO_DOCS_HOST=aeroo \
-    AFIP_HOMO_PKEY_FILE=/opt/odoo/backups/homo.pkey \
-    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
-    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
-    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
-    DB_TEMPLATE=template1
+#ENV \
+#    DB_TEMPLATE=template1 \
+#    PGUSER=odoo \
+#    PGPASSWORD=odoo \
+#    PGHOST=db
+#    ODOO_SERVER=odoo \
+#    ODOO_CONF=/opt/odoo/etc/odoo.conf \
+#    FIXDBS=False \
+#    WAIT_PG=True \
+#    PG_MAX_CONNECTIONS=100 \
+#    # odoo conf variables
+#    MAX_CRON_THREADS=1 \
+#    SMTP_SERVER=localhost \
+#    SMTP_PORT=25 \
+#    SMTP_SSL=False \
+#    SMTP_USER=False \
+#    SMTP_PASSWORD=False \
+#    UNACCENT=True \
+#    WORKERS=6 \
+#    ADMIN_PASSWORD=admin \
+#    DISABLE_SESSION_GC=false \
+#    PROXY_MODE=True \
+#    WITHOUT_DEMO=True \
+#    DBFILTER=.* \
+#    LIMIT_TIME_CPU=1600 \
+#    LIMIT_TIME_REAL=3200 \
+#    LIMIT_MEMORY_HARD=2684354560 \
+#    LIMIT_MEMORY_SOFT=2147483648 \
+#    AEROO_DOCS_HOST=aeroo \
+#    AFIP_HOMO_PKEY_FILE=/opt/odoo/backups/homo.pkey \
+#    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
+#    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
+#    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
 
-# odoo server use this env var as default conf
-ENV ODOO_RC $ODOO_CONF
+# odoo server use this env var as default conf, check if v9 or v10 rename it
+#ENV ODOO_RC $ODOO_CONF
 
 USER odoo

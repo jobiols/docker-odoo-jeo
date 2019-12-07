@@ -1,18 +1,25 @@
-FROM debian:jessie
+FROM debian:stretch-slim
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
 
-# actualizar las sources.list con el repo de postgress
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >  /etc/apt/sources.list.d/pgdg.list
+RUN set -x; \
+        apt-get update \
+        && apt-get install -y --no-install-recommends \
+            dirmngr \
+            unzip \
+            gnupg
 
-# actualizar e instalar wget
-RUN apt-get update && apt-get install wget unzip -y
-
-# traerme las keys e instalarlas
-#RUN apt-get install ca-certificates -y
-#RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-
-# instalar postgress client
-RUN apt-get update && apt-get install postgresql-client-9.4 -y --force-yes --no-install-recommends
+# install latest postgresql-client
+RUN set -x; \
+        echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > etc/apt/sources.list.d/pgdg.list \
+        && export GNUPGHOME="$(mktemp -d)" \
+        && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
+        && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
+        && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
+        && gpgconf --kill all \
+        && rm -rf "$GNUPGHOME" \
+        && apt-get update  \
+        && apt-get install -y postgresql-client \
+        && rm -rf /var/lib/apt/lists/*
 
 ADD restore.sh /usr/bin/restore.sh
 ADD extend.sh /usr/bin/extend.sh
