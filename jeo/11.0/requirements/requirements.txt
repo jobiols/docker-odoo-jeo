@@ -13,3 +13,4 @@ num2words
 # ot de amic
 pdf2image
 openpyxl
+geopy
