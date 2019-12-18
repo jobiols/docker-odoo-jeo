@@ -49,8 +49,8 @@ RUN set -x; \
 
 # Install Odoo
 ENV ODOO_VERSION 11.0
-ARG ODOO_RELEASE=20191022
-ARG ODOO_SHA=eea3333a3d7402c4ff63a09d9da145a6a4a3bab2
+ARG ODOO_RELEASE=20191106
+ARG ODOO_SHA=d6da6c631fb9926c4440f2016d623c37fa38d4ea
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
         && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -156,7 +156,7 @@ ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
 ENV CUSTOM_ADDONS /opt/odoo/custom-addons
 ENV EXTRA_ADDONS /opt/odoo/extra-addons
-RUN mkdir -p /opt/odoo \
+RUN    mkdir -p /opt/odoo \
     && mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
     && mkdir -p ${CUSTOM_ADDONS} \

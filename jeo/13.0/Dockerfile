@@ -51,8 +51,8 @@ RUN set -x; \
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20191022
-ARG ODOO_SHA=09eb205ed1e4348dd4762263cafa9819e17dba7e
+ARG ODOO_RELEASE=20191106
+ARG ODOO_SHA=b13bec4d20dfe36f1baa923719e37ea6bbe18a7d
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
         && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -96,26 +96,23 @@ USER root
 
 COPY ./entrypoint.sh /
 
+ENV ETC_DIR /opt/odoo/etc
+ENV DATA_DIR /opt/odoo/data
+ENV LOG_DIR /var/log/odoo
+ENV BKP_DIR /var/odoo/backups
+ENV ADDONS_DIR /opt/odoo/custom-addons
+RUN \
+       mkdir -p ${ETC_DIR} \
+    && mkdir -p ${DATA_DIR} \
+    && mkdir -p ${LOG_DIR} \
+    && mkdir -p ${BKP_DIR} \
+    && mkdir -p ${ADDONS_DIR} \
+    && chown -R odoo.odoo /opt/odoo \
+    && chown -R odoo.odoo /var/odoo
+
 # config
-RUN mkdir -p /opt/odoo/etc \
-    && chown -R odoo /opt/odoo/etc
-ENV ODOO_RC /opt/odoo/etc/odoo.conf
-
-# filestore
-RUN mkdir -p /opt/odoo/data \
-    && chown -R odoo /opt/odoo/data
-
-# log
-RUN mkdir -p /var/log/odoo \
-    && chown -R odoo /var/log/odoo
-
-# backup
-RUN mkdir -p /var/odoo/backups \
-    && chown -R odoo /var/odoo/backups
-
-# addons
-RUN mkdir -p /opt/odoo/custom-addons \
-    && chown -R odoo /opt/odoo/custom-addons
+COPY ./odoo.conf ${ETC_DIR}
+ENV ODOO_RC ${ETC_DIR}/odoo.conf
 
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
 # libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
@@ -140,24 +137,24 @@ RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 #    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # requisites for M2Crypto
-RUN apt-get update -qq
-RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
+#RUN apt-get update -qq
+#RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
-RUN pip3 install -r /req/adhoc-account-payment.txt
-RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/adhoc-argentina-reporting.txt
-RUN pip3 install -r /req/adhoc-argentina-sale.txt
-RUN pip3 install -r /req/adhoc-miscellaneous.txt
-RUN pip3 install -r /req/adhoc-odoo-support.txt
-RUN pip3 install -r /req/adhoc-product.txt
+#RUN pip3 install -r /req/adhoc-account-payment.txt
+#RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+#RUN pip3 install -r /req/adhoc-argentina-reporting.txt
+#RUN pip3 install -r /req/adhoc-argentina-sale.txt
+#RUN pip3 install -r /req/adhoc-miscellaneous.txt
+#RUN pip3 install -r /req/adhoc-odoo-support.txt
+#RUN pip3 install -r /req/adhoc-product.txt
+#RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN pip3 install -r /req/oca-server-tools.txt
 RUN pip3 install -r /req/oca-web.txt
 RUN pip3 install -r /req/oca-rest-framework.txt
 RUN pip3 install -r /req/oca-partner-contact.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN rm -r /req
 
 # crear cache para pyafipws
@@ -167,19 +164,8 @@ RUN rm -r /req
 # Make auto_install = False for various modules
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
 
-# create directory for odoo files
-ENV ETC_DIR /opt/odoo/etc
-ENV DATA_DIR /opt/odoo/data
-ENV CUSTOM_ADDONS /opt/odoo/custom-addons
-ENV EXTRA_ADDONS /opt/odoo/extra-addons
-RUN    mkdir -p ${ETC_DIR} \
-    && mkdir -p ${DATA_DIR} \
-    && mkdir -p ${CUSTOM_ADDONS} \
-    && mkdir -p ${EXTRA_ADDONS} \
-    && chown -R odoo.odoo /opt/odoo
-
 # Mount persistent directories
-VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
+#VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
 
 # replace  entrypoint script and replace Odoo configuration file (new name)
 #ENV RESOURCES /opt/odoo/resources/
@@ -224,7 +210,5 @@ VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
 #    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
 #    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
 
-# odoo server use this env var as default conf, check if v9 or v10 rename it
-#ENV ODOO_RC $ODOO_CONF
 
 USER odoo
