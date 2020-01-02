@@ -6,10 +6,8 @@ requests_oauthlib
 
 # modulo del restaurante nato
 #netifaces
-
 phonenumbers
 num2words
-
 # ot de amic
 pdf2image
 openpyxl
