@@ -89,6 +89,7 @@ CMD ["odoo"]
 
 FROM base-image
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
+ENV Release 2020-01-24
 
 USER root
 
