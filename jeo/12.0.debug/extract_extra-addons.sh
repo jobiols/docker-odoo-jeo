@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-# nada que hacer
+# nada que hacer, no hay repos en la imagen
