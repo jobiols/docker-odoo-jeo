@@ -4,4 +4,4 @@
 # revision 2020-02-24
 
 rm -r /mnt/dist-packages/*
-cp -r /usr/local/lib/python3.5/dist-packages/* /mnt/dist-packages/
+cp -r /usr/lib/python3/dist-packages/* /mnt/dist-packages/
