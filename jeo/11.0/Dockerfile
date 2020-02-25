@@ -98,7 +98,7 @@ USER root
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
 # libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    git nano htop ssh wget unzip iputils-ping telnet \
+    git ssh wget unzip iputils-ping \
     python3-dev build-essential \
     libldap2-dev libsasl2-dev \
     libcups2-dev \
@@ -107,11 +107,6 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     && locale-gen es_AR.UTF-8 && update-locale \
     && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
     && pip3 install --no-cache-dir --upgrade pip setuptools
-
-# requisites multisite yelizariev
-#RUN apt-get -qq update && apt-get install -yqq \
-#    ruby-full build-essential rubygems \
-#    && gem install sass
 
 RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
     && apt-get purge -yqq build-essential '*-dev' \
