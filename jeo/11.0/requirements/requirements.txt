@@ -12,3 +12,4 @@ num2words
 pdf2image
 openpyxl
 geopy
+lxml
