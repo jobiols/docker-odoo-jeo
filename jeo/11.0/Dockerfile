@@ -102,6 +102,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     python3-dev build-essential \
     libldap2-dev libsasl2-dev \
     libcups2-dev \
+    python3-lxml \
     locales \
     && locale-gen en_US.UTF-8 && update-locale \
     && locale-gen es_AR.UTF-8 && update-locale \
@@ -117,8 +118,9 @@ RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/
 RUN apt-get update -qq
 RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
+RUN apt-get install unixodbc-dev -y
+
 COPY ./requirements /req
-RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/adhoc-account-payment.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN pip3 install -r /req/adhoc-argentina-reporting.txt
@@ -137,6 +139,7 @@ RUN pip3 install -r /req/oca-geospatial.txt
 RUN pip3 install -r /req/fecr.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
 RUN pip3 install -r /req/letsencrypt-requirements.txt
+RUN pip3 install -r /req/requirements.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle

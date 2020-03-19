@@ -12,4 +12,8 @@ num2words
 pdf2image
 openpyxl
 geopy
-lxml
+# el bueno de mario
+MechanicalSoup
+zpl2
+pyodbc
+jwt
