@@ -164,9 +164,6 @@ RUN rm -r /req
 #RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 #RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 
-# Make auto_install = False for various modules
-RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
-
 # Mount persistent directories
 #VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
 

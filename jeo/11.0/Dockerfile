@@ -149,7 +149,6 @@ RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
 RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
 
 # Make auto_install = False for various modules
-RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/procurement_jit/__manifest__.py
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/l10n_ar/__manifest__.py
 
 # create directory for odoo files
