@@ -1,0 +1,15 @@
+include *.txt
+include LICENSE*
+include setup.py
+include setup.cfg
+include ChangeLog
+include MANIFEST.in
+
+recursive-include Modules *.c *.h
+
+prune build
+prune dist
+prune RCS
+prune CVS
+prune .svn
+

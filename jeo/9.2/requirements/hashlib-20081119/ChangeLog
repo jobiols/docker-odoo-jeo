@@ -1,0 +1,11 @@
+20081119:
+
+  * Synced to svn.python.org r66496:
+  * Fix possible integer overflows in _hashopenssl #3886  - benjamin.peterson
+  * Make use of METH_O and METH_NOARGS where possible.    - georg.brandl
+  * Use Py_UnpackTuple instead of PyArg_ParseTuple.       - georg.brandl
+  * Improved the docstrings.                              - gregory.p.smith
+
+20060408a:
+
+  * Initial stand alone release.
