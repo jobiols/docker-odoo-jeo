@@ -97,13 +97,12 @@ ENV Release 2020-02-05
 
 USER root
 
-COPY ./entrypoint.sh /
-
 ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
 ENV LOG_DIR /var/log/odoo
 ENV BKP_DIR /var/odoo/backups
 ENV ADDONS_DIR /opt/odoo/custom-addons
+ENV ODOO_RC ${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
@@ -112,10 +111,6 @@ RUN \
     && mkdir -p ${ADDONS_DIR} \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
-
-# config
-COPY ./odoo.conf ${ETC_DIR}
-ENV ODOO_RC ${ETC_DIR}/odoo.conf
 
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
 # libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
