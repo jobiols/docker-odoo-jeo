@@ -56,3 +56,23 @@ then
 else
     echo "----------> Success odoo-jeo:13.0.debug"
 fi
+
+cd ../14.0
+if ! ./make.sh;
+then
+    echo "Failed odoo-jeo:14.0"
+	exit 1
+else
+    echo "----------> Success odoo-jeo:14.0"
+fi
+
+cd ../14.0.debug
+if ! ./make.sh;
+then
+    echo "Failed odoo-jeo:14.0.debug"
+	exit 1
+else
+    echo "----------> Success odoo-jeo:14.0.debug"
+fi
+
+

@@ -52,12 +52,11 @@ RUN set -x; \
     npm install -g rtlcss
 
 # Install Odoo
-ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20200121
-ARG ODOO_SHA=770d71cfafb9a8f8419b88f8033b964d5742ad57
+ENV ODOO_VERSION master
+ARG ODOO_RELEASE=latest
+
 RUN set -x; \
-        curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+        curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_14.0alpha1.latest_all.deb \
         && dpkg --force-depends -i odoo.deb \
         && apt-get update \
         && apt-get -y install -f --no-install-recommends \
@@ -128,7 +127,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 #    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
 #    && pip3 install --no-cache-dir --upgrade pip setuptools
 
-RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
+#RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 # num2words wheel vobject qrcode
 #    && apt-get purge -yqq build-essential '*-dev' \
 #    && apt-get -yqq autoremove \
@@ -138,8 +137,8 @@ RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 #RUN apt-get update -qq
 #RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
-COPY ./requirements /req
-RUN pip3 install -r /req/requirements.txt
+#COPY ./requirements /req
+#RUN pip3 install -r /req/requirements.txt
 #RUN pip3 install -r /req/adhoc-account-payment.txt
 #RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 #RUN pip3 install -r /req/adhoc-argentina-reporting.txt
@@ -148,12 +147,12 @@ RUN pip3 install -r /req/requirements.txt
 #RUN pip3 install -r /req/adhoc-odoo-support.txt
 #RUN pip3 install -r /req/adhoc-product.txt
 #RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-RUN pip3 install -r /req/oca-server-tools.txt
-RUN pip3 install -r /req/oca-web.txt
-RUN pip3 install -r /req/oca-rest-framework.txt
-RUN pip3 install -r /req/oca-partner-contact.txt
+#RUN pip3 install -r /req/oca-server-tools.txt
+#RUN pip3 install -r /req/oca-web.txt
+#RUN pip3 install -r /req/oca-rest-framework.txt
+#RUN pip3 install -r /req/oca-partner-contact.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
-RUN rm -r /req
+#RUN rm -r /req
 
 # crear cache para pyafipws
 #RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache

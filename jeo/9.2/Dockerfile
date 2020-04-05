@@ -2,6 +2,7 @@ FROM jobiols/odoo-jeo:9.1
 MAINTAINER Jobiols <jorge.obiols@gmail.com>
 
 USER root
+ENV Release 2020-04-05
 
 COPY ./requirements /req
 RUN pip install -r /req/requirements.txt
