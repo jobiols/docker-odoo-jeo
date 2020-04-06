@@ -51,11 +51,11 @@ RUN set -x; \
 
 # Install Odoo
 ENV ODOO_VERSION 11.0
-ARG ODOO_RELEASE=20200121
-ARG ODOO_SHA=13f30434cb4fb28b11d78fd4e7c616d03362f779
+ARG ODOO_RELEASE=latest
+#ARG ODOO_SHA=13f30434cb4fb28b11d78fd4e7c616d03362f779
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && dpkg --force-depends -i odoo.deb \
         && apt-get update \
         && apt-get -y install -f --no-install-recommends \
@@ -91,7 +91,7 @@ CMD ["odoo"]
 
 FROM base-image
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
-ENV Release 2020-04-05
+ENV Release 2020-04-06
 
 USER root
 
