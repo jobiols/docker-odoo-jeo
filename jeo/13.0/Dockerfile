@@ -57,7 +57,7 @@ ARG ODOO_RELEASE=latest
 #ARG ODOO_SHA=770d71cfafb9a8f8419b88f8033b964d5742ad57
 RUN set -x; \
         curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#       && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && dpkg --force-depends -i odoo.deb \
         && apt-get update \
         && apt-get -y install -f --no-install-recommends \
@@ -112,6 +112,10 @@ RUN \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
 
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3 get-pip.py \
+    && rm get-pip.py
+
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
 # libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
 # libcups2-dev is for aeroo. Then install locales and later clean everything
@@ -148,10 +152,10 @@ RUN pip3 install -r /req/requirements.txt
 #RUN pip3 install -r /req/adhoc-odoo-support.txt
 #RUN pip3 install -r /req/adhoc-product.txt
 #RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-RUN pip3 install -r /req/oca-server-tools.txt
-RUN pip3 install -r /req/oca-web.txt
-RUN pip3 install -r /req/oca-rest-framework.txt
-RUN pip3 install -r /req/oca-partner-contact.txt
+#RUN pip3 install -r /req/oca-server-tools.txt
+#RUN pip3 install -r /req/oca-web.txt
+#RUN pip3 install -r /req/oca-rest-framework.txt
+#RUN pip3 install -r /req/oca-partner-contact.txt
 #RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
 RUN rm -r /req
 
@@ -169,41 +173,5 @@ RUN rm -r /req
 # change entrypoint
 #ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
 #CMD ["odoo"]
-
-# Variables used by the launch scripts
-#ENV \
-#    DB_TEMPLATE=template1 \
-#    PGUSER=odoo \
-#    PGPASSWORD=odoo \
-#    PGHOST=db
-#    ODOO_SERVER=odoo \
-#    ODOO_CONF=/opt/odoo/etc/odoo.conf \
-#    FIXDBS=False \
-#    WAIT_PG=True \
-#    PG_MAX_CONNECTIONS=100 \
-#    # odoo conf variables
-#    MAX_CRON_THREADS=1 \
-#    SMTP_SERVER=localhost \
-#    SMTP_PORT=25 \
-#    SMTP_SSL=False \
-#    SMTP_USER=False \
-#    SMTP_PASSWORD=False \
-#    UNACCENT=True \
-#    WORKERS=6 \
-#    ADMIN_PASSWORD=admin \
-#    DISABLE_SESSION_GC=false \
-#    PROXY_MODE=True \
-#    WITHOUT_DEMO=True \
-#    DBFILTER=.* \
-#    LIMIT_TIME_CPU=1600 \
-#    LIMIT_TIME_REAL=3200 \
-#    LIMIT_MEMORY_HARD=2684354560 \
-#    LIMIT_MEMORY_SOFT=2147483648 \
-#    AEROO_DOCS_HOST=aeroo \
-#    AFIP_HOMO_PKEY_FILE=/opt/odoo/backups/homo.pkey \
-#    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
-#    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
-#    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
-
 
 USER odoo
