@@ -1,2 +1,5 @@
 #pysftp
+
+# Dependencias para l10n_ar_edi
 pyopenssl
+zeep
