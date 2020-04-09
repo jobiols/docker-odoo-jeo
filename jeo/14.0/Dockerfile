@@ -91,7 +91,7 @@ CMD ["odoo"]
 ###############################################################################
 
 FROM base-image
-MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 ENV Release 2020-04-05
 
 USER root
@@ -168,41 +168,5 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 # change entrypoint
 #ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
 #CMD ["odoo"]
-
-# Variables used by the launch scripts
-#ENV \
-#    DB_TEMPLATE=template1 \
-#    PGUSER=odoo \
-#    PGPASSWORD=odoo \
-#    PGHOST=db
-#    ODOO_SERVER=odoo \
-#    ODOO_CONF=/opt/odoo/etc/odoo.conf \
-#    FIXDBS=False \
-#    WAIT_PG=True \
-#    PG_MAX_CONNECTIONS=100 \
-#    # odoo conf variables
-#    MAX_CRON_THREADS=1 \
-#    SMTP_SERVER=localhost \
-#    SMTP_PORT=25 \
-#    SMTP_SSL=False \
-#    SMTP_USER=False \
-#    SMTP_PASSWORD=False \
-#    UNACCENT=True \
-#    WORKERS=6 \
-#    ADMIN_PASSWORD=admin \
-#    DISABLE_SESSION_GC=false \
-#    PROXY_MODE=True \
-#    WITHOUT_DEMO=True \
-#    DBFILTER=.* \
-#    LIMIT_TIME_CPU=1600 \
-#    LIMIT_TIME_REAL=3200 \
-#    LIMIT_MEMORY_HARD=2684354560 \
-#    LIMIT_MEMORY_SOFT=2147483648 \
-#    AEROO_DOCS_HOST=aeroo \
-#    AFIP_HOMO_PKEY_FILE=/opt/odoo/backups/homo.pkey \
-#    AFIP_HOMO_CERT_FILE=/opt/odoo/backups/homo.cert \
-#    AFIP_PROD_PKEY_FILE=/opt/odoo/backups/prod.pkey \
-#    AFIP_PROD_CERT_FILE=/opt/odoo/backups/prod.cert \
-
 
 USER odoo

@@ -1,5 +1,5 @@
 FROM jobiols/odoo-jeo:13.0
-MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
