@@ -3,3 +3,7 @@
 # Dependencias para l10n_ar_edi
 pyopenssl
 zeep
+paramiko
+
+# dependencia de odoo ETL
+erppeek
