@@ -1,4 +1,4 @@
-FROM jobiols/odoo-jeo:9.0.ou
+FROM jobiols/odoo-jeo:9.1
 MAINTAINER Jorge Obiols <jorge.obiols@gmail.com>
 
 USER root
