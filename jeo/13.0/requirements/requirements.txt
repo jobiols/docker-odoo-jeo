@@ -1,9 +1,10 @@
-#pysftp
-
 # Dependencias para l10n_ar_edi
-pyopenssl
-zeep
-paramiko
+pyOpenSSL==19.1.0
+zeep==3.4.0
+paramiko==2.7.1
 
 # dependencia de odoo ETL
-erppeek
+ERPpeek==1.7.1
+
+# dependencia para lab
+markdown==3.2.2
