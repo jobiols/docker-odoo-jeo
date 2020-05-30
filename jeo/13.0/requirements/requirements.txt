@@ -8,3 +8,6 @@ ERPpeek==1.7.1
 
 # dependencia para lab
 markdown==3.2.2
+
+# dependencia para webkul saas
+docker==4.2.0
