@@ -10,7 +10,7 @@ rm -rf /backup/tmp
 if [[ -z "${ZIPFILE}" ]]; then
     echo "Searching for latest local backup"
     unset -v latest
-    for file in "/backup"/*; do
+    for file in "/backup"/*.zip; do
       [[ $file -nt $latest ]] && ZIPFILE=$file
     done
     echo "Latest file is $ZIPFILE"
