@@ -54,7 +54,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20200530
+ARG ODOO_RELEASE=20200613
 #ARG ODOO_SHA=db29fbcebf63f9f656e9445f462190ac775ee533
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -73,7 +73,7 @@ RUN chown odoo /etc/odoo/odoo.conf \
 VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
 # Expose Odoo services
-EXPOSE 8069 8071 8072
+EXPOSE 8069 8072
 
 # Set the default config file
 ENV ODOO_RC /etc/odoo/odoo.conf
@@ -92,7 +92,7 @@ CMD ["odoo"]
 
 FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-ENV Release 2020-05-30
+ENV Release 2020-06-13
 
 USER root
 
@@ -115,62 +115,14 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && python3 get-pip.py \
     && rm get-pip.py
 
-# Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
-# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
-# libcups2-dev is for aeroo. Then install locales and later clean everything
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git \
     python3-dev build-essential
 
-#    ssh wget unzip iputils-ping \
-#    libldap2-dev libsasl2-dev \
-#    libcups2-dev \
-#    locales \
-#    && locale-gen en_US.UTF-8 && update-locale \
-#    && locale-gen es_AR.UTF-8 && update-locale \
-#    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
-#    && pip3 install --no-cache-dir --upgrade pip setuptools
-
 RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
-# num2words wheel vobject qrcode
-#    && apt-get purge -yqq build-essential '*-dev' \
-#    && apt-get -yqq autoremove \
-#    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# requisites for M2Crypto
-#RUN apt-get update -qq
-#RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
-#RUN pip3 install -r /req/adhoc-account-payment.txt
-#RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-#RUN pip3 install -r /req/adhoc-argentina-reporting.txt
-#RUN pip3 install -r /req/adhoc-argentina-sale.txt
-#RUN pip3 install -r /req/adhoc-miscellaneous.txt
-#RUN pip3 install -r /req/adhoc-odoo-support.txt
-#RUN pip3 install -r /req/adhoc-product.txt
-#RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-#RUN pip3 install -r /req/oca-server-tools.txt
-#RUN pip3 install -r /req/oca-web.txt
-#RUN pip3 install -r /req/oca-rest-framework.txt
-#RUN pip3 install -r /req/oca-partner-contact.txt
-#RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
 RUN rm -r /req
-
-# crear cache para pyafipws
-#RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-#RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-
-# Mount persistent directories
-#VOLUME ["${DATA_DIR}", "${CUSTOM_ADDONS}"]
-
-# replace  entrypoint script and replace Odoo configuration file (new name)
-#ENV RESOURCES /opt/odoo/resources/
-#COPY ./resources/ ${RESOURCES}
-
-# change entrypoint
-#ENTRYPOINT ["/opt/odoo/resources/entrypoint.sh"]
-#CMD ["odoo"]
 
 USER odoo
