@@ -9,7 +9,7 @@ COPY ./extract_dist-local-packages.sh /
 COPY ./extract_extra-addons.sh /
 
 # requerimiento para odoo-uml
-RUN apt-get install default-jdk -y
+RUN apt-get update && apt-get install default-jdk -y
 
 # install wdb
 RUN pip install wdb
