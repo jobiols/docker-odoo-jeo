@@ -11,3 +11,7 @@ markdown==3.2.2
 
 # dependencia para webkul saas
 docker==4.2.0
+
+# dependencia para meli
+
+pdf2image
