@@ -1,4 +1,14 @@
-FROM debian:stretch-slim AS base-image
+FROM debian:stretch-slim AS origin
+
+RUN apt-get update \
+    && apt-get install -y \
+    python3 \
+    curl
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o /get-pip.py \
+    && python3 /get-pip.py \
+    && pip install psycopg2==2.7.3.1
+
+FROM origin AS base-image
 LABEL Odoo S.A. <info@odoo.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -53,7 +63,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc
 
 # Install Odoo
 ENV ODOO_VERSION 11.0
-ARG ODOO_RELEASE=20200709
+ARG ODOO_RELEASE=20200718
 #ARG ODOO_SHA=e21c34a263785eea09babd7a0d876ba05c841935
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -91,7 +101,7 @@ CMD ["odoo"]
 
 FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-ENV Release 2020-07-09
+ENV Release 2020-07-18
 
 USER root
 
@@ -212,4 +222,12 @@ ENV \
 # odoo server use this env var as default conf
 ENV ODOO_RC $ODOO_CONF
 
-USER odoo
+# Actualizamos la libreria psycopg2 para openupgradelib
+# No hubo forma de hacerlo por las buenas...
+RUN rm -r /usr/lib/python3/dist-packages/psycopg2
+RUN rm -r /usr/lib/python3/dist-packages/psycopg2-2.6.2.egg-info
+
+COPY --from=0 /usr/local/lib/python3.5/dist-packages/psycopg2 .
+COPY --from=0 /usr/local/lib/python3.5/dist-packages/psycopg2-2.7.3.1.dist-info .
+
+#USER odoo
