@@ -8,10 +8,12 @@ requests_oauthlib
 #netifaces
 phonenumbers
 num2words
+
 # ot de amic
 pdf2image
 openpyxl
 geopy
+
 # el bueno de mario
 MechanicalSoup
 zpl2
