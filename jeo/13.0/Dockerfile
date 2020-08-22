@@ -54,7 +54,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20200725
+ARG ODOO_RELEASE=20200803
 #ARG ODOO_SHA=db29fbcebf63f9f656e9445f462190ac775ee533
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -92,7 +92,7 @@ CMD ["odoo"]
 
 FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-ENV Release 2020-07-25
+ENV Release 2020-08-03
 
 USER root
 
@@ -121,8 +121,15 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 
 RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 
-COPY ./requirements /req
-RUN pip3 install -r /req/requirements.txt
+# requisites for M2Crypto
+RUN apt-get update -qq
+RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
+
+COPY ./requirements /req 
+RUN pip3 install -r /req/adhoc-odoo-argentina.txt 
+RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt 
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt 
+RUN pip3 install -r /req/database-autobackup.txt 
 RUN rm -r /req
 
 USER odoo
