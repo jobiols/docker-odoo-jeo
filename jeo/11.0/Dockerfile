@@ -63,7 +63,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc
 
 # Install Odoo
 ENV ODOO_VERSION 11.0
-ARG ODOO_RELEASE=20200822
+ARG ODOO_RELEASE=20200825
 #ARG ODOO_SHA=e21c34a263785eea09babd7a0d876ba05c841935
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -101,7 +101,7 @@ CMD ["odoo"]
 
 FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-ENV Release 2020-08-22
+ENV Release 2020-08-25
 
 USER root
 
@@ -159,6 +159,10 @@ RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
 
 # Make auto_install = False for various modules
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/l10n_ar/__manifest__.py
+
+# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL 
+# parece que la afip tiene un cifrado debil.
+RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
 # create directory for odoo files
 ENV ETC_DIR /opt/odoo/etc

@@ -54,7 +54,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20200822
+ARG ODOO_RELEASE=20200825
 #ARG ODOO_SHA=db29fbcebf63f9f656e9445f462190ac775ee533
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -92,7 +92,7 @@ CMD ["odoo"]
 
 FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-ENV Release 2020-08-22
+ENV Release 2020-08-25
 
 USER root
 
@@ -111,25 +111,34 @@ RUN \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
 
+# instalar el ultimo pip
 RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && python3 get-pip.py \
     && rm get-pip.py
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    git \
-    python3-dev build-essential
+    git python3-dev build-essential
 
 RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 
-# requisites for M2Crypto
-RUN apt-get update -qq
-RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
+# requisitos para M2Crypto
+#RUN apt-get update -qq
+RUN apt-get install python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req 
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt 
 RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt 
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt 
 RUN pip3 install -r /req/database-autobackup.txt 
 RUN rm -r /req
+
+# crear cache para pyafipws lo necesita para actualizar desde padron y darle
+# permisos para que pueda escribir desde pyafipws porque ahi hay una base
+# sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
+RUN mkdir /usr/local/lib/python3.7/dist-packages/pyafipws/cache
+RUN chmod -R o+w /usr/local/lib/python3.7/dist-packages/pyafipws
+
+# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL 
+# parece que la afip tiene un cifrado debil.
+RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
 USER odoo
