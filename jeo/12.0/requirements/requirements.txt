@@ -1,3 +1,4 @@
 pysftp
 erppeek
 markdown
+PyPDF2

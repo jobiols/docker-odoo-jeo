@@ -12,5 +12,6 @@ RUN apt-get install default-jdk -y
 
 # install wdb
 RUN pip3 install wdb
+RUN pip3 install erppeek
 
 USER odoo
