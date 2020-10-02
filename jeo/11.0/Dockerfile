@@ -101,7 +101,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git ssh wget unzip iputils-ping \
     python3-dev build-essential \
     libldap2-dev libsasl2-dev \
-    libcups2-dev \
+#    libcups2-dev \
     python3-lxml \
     locales \
     && locale-gen en_US.UTF-8 && update-locale \

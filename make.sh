@@ -1,78 +1,40 @@
 #!/usr/bin/env bash
 #
-# Script par hacer Build de las imagenes solo local
-# Para hacer el build en docker pushear este repo en github
+# Script par hacer Build de las imagnes enterprise solo local
+# Baja los fuentes enterprise de vauxoo de cada version y los pone en este
+# repositorio luego hace un make de cada version.
+#
+# Finalmente hay que hacer un push a github para que se haga el build en
+# dockerhub, hacerlo manual porque el vscode se tara con tantos archivos.
+CD="/home/jobiols/git-repos/docker-odoo-jeo/jeo"
 
-cd jeo/11.0
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:11.0"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:11.0"
-fi
+versions=( 11.0 12.0 13.0 14.0 )
+#deprecated=( 8.0 9.0 10.0 11.0 )
 
-cd ../11.0.debug
-if ! ./make.sh;
-then
-    echo "Failed jeo-11.0.debug"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:11.0.debug"
-fi
+for version in ${versions[@]}
+do 
+    echo "********************************************************************"   
+    echo "Building V$version"
 
-cd ../12.0
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:12.0"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:12.0"
-fi
+    # moverse al directorio correspondiente
+    cd "$CD/$version"
+    if ! ./make.sh;
+    then
+        echo "Failed jobiols/odoo-jeo:$version"
+        exit 1
+    else
+        echo "----------> Success jobiols/odoo-jeo:$version"
+        echo
+    fi
+    cd "$CD/$version".debug
 
-cd ../12.0.debug
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:12.0.debug"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:12.0.debug"
-fi
+    if ! ./make.sh;
+    then
+        echo "Failed jobiols/odoo-jeo:$version.debug"
+        exit 1
+    else
+        echo "----------> Success jobiols/odoo-jeo:$version.debug"
+        echo
+    fi
 
-cd ../13.0
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:13.0"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:13.0"
-fi
-
-cd ../13.0.debug
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:13.0.debug"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:13.0.debug"
-fi
-
-cd ../14.0
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:14.0"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:14.0"
-fi
-
-cd ../14.0.debug
-if ! ./make.sh;
-then
-    echo "Failed odoo-jeo:14.0.debug"
-	exit 1
-else
-    echo "----------> Success odoo-jeo:14.0.debug"
-fi
-
-
+done
