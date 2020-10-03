@@ -1,5 +1,5 @@
 #!/bin/bash
-# exit inmediately if a command exits with a non-zero status.
+
 set -e
 
 echo "Release $ODOO_RELEASE by jeo Software"
@@ -10,26 +10,6 @@ echo "Release $ODOO_RELEASE by jeo Software"
 : ${PORT:=${DB_PORT_5432_TCP_PORT:=5432}}
 : ${USER:=${DB_ENV_POSTGRES_USER:=${POSTGRES_USER:='odoo'}}}
 : ${PASSWORD:=${DB_ENV_POSTGRES_PASSWORD:=${POSTGRES_PASSWORD:='odoo'}}}
-
-# Know if Postgres is listening
-function db_is_listening() {
-    psql --list > /dev/null 2>&1 || (sleep 1 && db_is_listening)
-}
-
-echo Waiting until the database server is listening... > /dev/stderr
-#db_is_listening
-
-# Check pg user exist
-function pg_user_exist() {
-    psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PGUSER'" > /dev/null 2>&1 || (sleep 1 && pg_user_exist)
-}
-
-echo Waiting until the pg user $PGUSER is created... > /dev/stderr
-#pg_user_exist
-
-# Add the unaccent module for the database if needed
-echo Trying to install unaccent extension... > /dev/stderr
-#psql -d $DB_TEMPLATE -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'
 
 DB_ARGS=()
 function check_config() {
@@ -51,10 +31,12 @@ case "$1" in
         if [[ "$1" == "scaffold" ]] ; then
             exec odoo "$@"
         else
+            wait-for-psql.py ${DB_ARGS[@]} --timeout=30
             exec odoo "$@" "${DB_ARGS[@]}"
         fi
         ;;
     -*)
+        wait-for-psql.py ${DB_ARGS[@]} --timeout=30
         exec odoo "$@" "${DB_ARGS[@]}"
         ;;
     *)
