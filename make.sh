@@ -12,8 +12,8 @@ versions=( 11.0 12.0 13.0 14.0 )
 
 for version in ${versions[@]}
 do 
-    echo "********************************************************************"   
-    echo "Building V$version"
+    echo "******************************************************************** Building V$version" 
+    echo
 
     # moverse al directorio correspondiente
     cd "$CD/$version"
