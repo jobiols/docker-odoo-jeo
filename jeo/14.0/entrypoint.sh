@@ -1,9 +1,9 @@
 #!/bin/bash
 
-echo "Odoo Image Release $Release by jeo"
-
 # exit inmediately if a command exits with a non-zero status.
 set -e
+
+echo "Release $ODOO_RELEASE by jeo Software"
 
 # set the postgres database host, port, user and password according to the environment
 # and pass them as arguments to the odoo process if not present in the config file

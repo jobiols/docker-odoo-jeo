@@ -92,7 +92,6 @@ CMD ["odoo"]
 
 FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-ENV Release 2020-09-30
 
 USER root
 
