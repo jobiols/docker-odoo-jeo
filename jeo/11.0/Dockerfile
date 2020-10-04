@@ -53,7 +53,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc
 
 # Install Odoo
 ENV ODOO_VERSION 11.0
-ARG ODOO_RELEASE=20200930
+ENV ODOO_RELEASE=20200930
 #ARG ODOO_SHA=e21c34a263785eea09babd7a0d876ba05c841935
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -99,7 +99,7 @@ USER root
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git ssh wget unzip iputils-ping \
 #    python3-dev \
-    build-essential \
+#    build-essential \
     libldap2-dev \
     libsasl2-dev \
 #    libcups2-dev \
@@ -112,8 +112,8 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 #    && pip3 install --no-cache-dir --upgrade pip setuptools
 
 RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
-    && apt-get purge -yqq build-essential '*-dev' \
-    && apt-get -yqq autoremove \
+#    && apt-get purge -yqq build-essential '*-dev' \
+#    && apt-get -yqq autoremove \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # requisites for M2Crypto
@@ -170,6 +170,9 @@ RUN    mkdir -p /opt/odoo \
     && mkdir -p ${CUSTOM_ADDONS} \
     && mkdir -p ${EXTRA_ADDONS} \
     && chown -R odoo.odoo /opt/odoo
+
+# Reset the default config file
+ENV ODOO_RC /opt/odoo/etc/odoo.conf
 
 COPY ./resources/ /opt/odoo/resources/
 

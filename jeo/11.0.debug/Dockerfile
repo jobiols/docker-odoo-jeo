@@ -8,11 +8,12 @@ COPY ./extract_dist-packages.sh /
 COPY ./extract_dist-local-packages.sh /
 
 # requerimiento para odoo-uml
-RUN apt-get install default-jdk -y
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    default-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
-# install wdb
-RUN pip3 install wdb
-# para etl
-RUN pip3 install erppeek
+RUN pip3 install \
+    wdb \
+    erppeek
 
 USER odoo
