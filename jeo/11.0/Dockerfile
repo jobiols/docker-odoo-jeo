@@ -98,15 +98,18 @@ USER root
 # libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git ssh wget unzip iputils-ping \
-    python3-dev build-essential \
-    libldap2-dev libsasl2-dev \
+#    python3-dev \
+    build-essential \
+    libldap2-dev \
+    libsasl2-dev \
 #    libcups2-dev \
     python3-lxml \
     locales \
+    && rm -rf /var/lib/apt/lists/* \
     && locale-gen en_US.UTF-8 && update-locale \
     && locale-gen es_AR.UTF-8 && update-locale \
-    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
-    && pip3 install --no-cache-dir --upgrade pip setuptools
+    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale
+#    && pip3 install --no-cache-dir --upgrade pip setuptools
 
 RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
     && apt-get purge -yqq build-essential '*-dev' \
@@ -114,31 +117,34 @@ RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # requisites for M2Crypto
-RUN apt-get update -qq
-RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
-
-RUN apt-get install unixodbc-dev -y
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    build-essential \
+    python3-dev \
+    python-dev \
+    libssl-dev swig \
+    unixodbc-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY ./requirements /req
-RUN pip3 install -r /req/adhoc-account-payment.txt
-RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/adhoc-argentina-reporting.txt
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-RUN pip3 install -r /req/adhoc-argentina-sale.txt
-RUN pip3 install -r /req/adhoc-miscellaneous.txt
-RUN pip3 install -r /req/adhoc-odoo-support.txt
-RUN pip3 install -r /req/adhoc-product.txt
-RUN pip3 install -r /req/oca-server-tools.txt
-RUN pip3 install -r /req/oca-web.txt
-RUN pip3 install -r /req/woocommerce-connector.txt
-RUN pip3 install -r /req/oca-rest-framework.txt
-RUN pip3 install -r /req/oca-connector.txt
-RUN pip3 install -r /req/oca-partner-contact.txt
-RUN pip3 install -r /req/oca-geospatial.txt
-RUN pip3 install -r /req/fecr.txt
-#RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
-RUN pip3 install -r /req/requirements.txt
-RUN rm -r /req
+RUN     pip3 install -r /req/adhoc-account-payment.txt \
+    &&  pip3 install -r /req/adhoc-aeroo_reports.txt \
+    &&  pip3 install -r /req/adhoc-argentina-reporting.txt \
+    &&  pip3 install -r /req/adhoc-odoo-argentina.txt \
+    &&  pip3 install -r /req/adhoc-argentina-sale.txt \
+    &&  pip3 install -r /req/adhoc-miscellaneous.txt \
+    &&  pip3 install -r /req/adhoc-odoo-support.txt \
+    &&  pip3 install -r /req/adhoc-product.txt \
+    &&  pip3 install -r /req/oca-server-tools.txt \
+    &&  pip3 install -r /req/oca-web.txt \
+    &&  pip3 install -r /req/woocommerce-connector.txt \
+    &&  pip3 install -r /req/oca-rest-framework.txt \
+    &&  pip3 install -r /req/oca-connector.txt \
+    &&  pip3 install -r /req/oca-partner-contact.txt \
+    &&  pip3 install -r /req/oca-geospatial.txt \
+    &&  pip3 install -r /req/fecr.txt \
+#   &&  pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
+    &&  pip3 install -r /req/requirements.txt \
+    && rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
 # permisos para que pueda escribir desde pyafipws porque ahi hay una base

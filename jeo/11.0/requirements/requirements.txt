@@ -19,6 +19,3 @@ geopy
 #zpl2
 #pyodbc
 #jwt
-
-# debug en vscode
-#debugpy
