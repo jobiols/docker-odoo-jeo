@@ -28,7 +28,7 @@ if __name__ == '__main__':
             error = e
         else:
             conn.close()
-        print('Wainting for database connection...')
+        print('Waiting for database connection...')
         time.sleep(1)
 
     if error:
