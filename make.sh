@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 #
-# Script par hacer Build de las imagnes enterprise solo local
-# Baja los fuentes enterprise de vauxoo de cada version y los pone en este
-# repositorio luego hace un make de cada version.
-#
-# Finalmente hay que hacer un push a github para que se haga el build en
-# dockerhub, hacerlo manual porque el vscode se tara con tantos archivos.
+# Script par hacer Build de las imagenes community
+
 CD="/home/jobiols/git-repos/docker-odoo-jeo/jeo"
 
 versions=( 11.0 12.0 13.0 14.0 )

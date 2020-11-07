@@ -18,9 +18,9 @@ if __name__ == '__main__':
     start_time = time.time()
     while (time.time() - start_time) < args.timeout:
         try:
-            conn = psycopg2.connect(user=args.db_user, host=args.db_host, 
-                                    port=args.db_port, 
-                                    password=args.db_password, 
+            conn = psycopg2.connect(user=args.db_user, host=args.db_host,
+                                    port=args.db_port,
+                                    password=args.db_password,
                                     dbname='postgres')
             error = ''
             break

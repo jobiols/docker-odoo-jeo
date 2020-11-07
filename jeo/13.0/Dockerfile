@@ -30,8 +30,8 @@ RUN apt-get update \
             python3-xlrd \
             python3-xlwt \
             xz-utils \
-        && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.stretch_amd64.deb \
-        && echo '7e35a63f9db14f93ec7feeb0fce76b30c08f2057 wkhtmltox.deb' | sha1sum -c - \
+        && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb \
+        && echo 'ea8277df4297afc507c61122f3c349af142f31e5 wkhtmltox.deb' | sha1sum -c - \
         && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
         && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
@@ -54,10 +54,10 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20200930
-#ARG ODOO_SHA=db29fbcebf63f9f656e9445f462190ac775ee533
+ENV ODOO_RELEASE=20201026
+ARG ODOO_SHA=d3f043345c04674bba81762d0afd88dab52aab36
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && apt-get update \
         && apt-get -y install --no-install-recommends ./odoo.deb \
         && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -124,11 +124,11 @@ RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 #RUN apt-get update -qq
 RUN apt-get install python-dev libssl-dev swig -y -qq
 
-COPY ./requirements /req 
-RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt 
-RUN pip3 install -r /req/adhoc-aeroo_reports.txt 
-RUN pip3 install -r /req/database-autobackup.txt 
-RUN pip3 install -r /req/odoo-etl.txt 
+COPY ./requirements /req
+RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+RUN pip3 install -r /req/database-autobackup.txt
+RUN pip3 install -r /req/odoo-etl.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
@@ -137,7 +137,7 @@ RUN rm -r /req
 RUN mkdir /usr/local/lib/python3.7/dist-packages/pyafipws/cache
 RUN chmod -R o+w /usr/local/lib/python3.7/dist-packages/pyafipws
 
-# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL 
+# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
