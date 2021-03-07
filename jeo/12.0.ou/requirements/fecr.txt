@@ -1,4 +1,0 @@
-jsonschema
-xmlsig
-urlparse3
-phonenumbers

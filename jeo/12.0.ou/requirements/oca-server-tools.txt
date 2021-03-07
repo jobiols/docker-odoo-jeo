@@ -1,6 +1,0 @@
-raven
-openpyxl
-xlrd
-xlwt
-pysftp
-pygount

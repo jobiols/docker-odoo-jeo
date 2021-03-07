@@ -53,10 +53,9 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc
 
 # Install Odoo
 ENV ODOO_VERSION 11.0
-ENV ODOO_RELEASE=20200930
+ENV ODOO_RELEASE=latest
 #ARG ODOO_SHA=e21c34a263785eea09babd7a0d876ba05c841935
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && apt-get update \
         && apt-get -y install --no-install-recommends ./odoo.deb\
         && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -136,14 +135,14 @@ RUN     pip3 install -r /req/adhoc-account-payment.txt \
     &&  pip3 install -r /req/adhoc-product.txt \
     &&  pip3 install -r /req/oca-server-tools.txt \
     &&  pip3 install -r /req/oca-web.txt \
-    &&  pip3 install -r /req/woocommerce-connector.txt \
     &&  pip3 install -r /req/oca-rest-framework.txt \
     &&  pip3 install -r /req/oca-connector.txt \
     &&  pip3 install -r /req/oca-partner-contact.txt \
     &&  pip3 install -r /req/oca-geospatial.txt \
     &&  pip3 install -r /req/fecr.txt \
-#   &&  pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
+    &&  pip3 install -r /req/oca-openupgradelib.txt \
     &&  pip3 install -r /req/requirements.txt \
+    &&  pip3 install -r /req/l10n_ar_fe_qr.txt \
     && rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
@@ -155,7 +154,7 @@ RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
 # Make auto_install = False for various modules
 RUN sed  -i  "s/'auto_install': True/'auto_install': False/" /usr/lib/python3/dist-packages/odoo/addons/l10n_ar/__manifest__.py
 
-# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL 
+# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 

@@ -19,3 +19,5 @@ geopy
 #zpl2
 #pyodbc
 #jwt
+# requerimiento de automatic_backup
+pydrive

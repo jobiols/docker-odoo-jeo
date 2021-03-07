@@ -1,4 +1,0 @@
-html2text
-mercadopago
-suds-jurko
-requests

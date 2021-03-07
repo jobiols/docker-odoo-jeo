@@ -1,2 +1,0 @@
-# esto fue para polimera
-#python-magic-debian-bin

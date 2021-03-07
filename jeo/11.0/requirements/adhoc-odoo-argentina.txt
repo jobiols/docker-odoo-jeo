@@ -7,4 +7,7 @@ git+https://github.com/pysimplesoap/pysimplesoap@stable_py3k
 # Pillow>=2.0.0
 # git+https://github.com/OCA/openupgradelib/@master
 # git+https://github.com/reingart/pyafipws@py3k
-git+https://github.com/ingadhoc/pyafipws@py3k
+# git+https://github.com/ingadhoc/pyafipws@py3k
+
+# para evitar TypeError('data must be bytes or None, not str',)
+git+https://github.com/jobiols/pyafipws@py3k

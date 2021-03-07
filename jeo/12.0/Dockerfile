@@ -67,10 +67,10 @@ RUN echo "deb http://deb.nodesource.com/node_8.x stretch main" > /etc/apt/source
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
-ENV ODOO_RELEASE=20201026
-ARG ODOO_SHA=848d079fdfa76f57bd742c3385096d6743c9532e
+ENV ODOO_RELEASE=20210307
+#ARG ODOO_SHA=73dd74d0185588fbe052471217b28c1f796a542c
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && apt-get update \
         && apt-get -y install --no-install-recommends ./odoo.deb \
         && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -108,87 +108,46 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
-# config
-RUN mkdir -p /opt/odoo/etc \
-    && chown -R odoo /opt/odoo/etc
-ENV ODOO_RC /opt/odoo/etc/odoo.conf
-
-# filestore
-RUN mkdir -p /opt/odoo/data \
-    && chown -R odoo /opt/odoo/data
-
-# log
-RUN mkdir -p /var/log/odoo \
-    && chown -R odoo /var/log/odoo
-
-# backup
-RUN mkdir -p /var/odoo/backups \
-    && chown -R odoo /var/odoo/backups
-
-# addons
-RUN mkdir -p /opt/odoo/custom-addons \
-    && chown -R odoo /opt/odoo/custom-addons
-
-# Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
-# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
-RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    git \
-    python3-dev build-essential
-
-#    ssh wget unzip iputils-ping \
-#    libldap2-dev libsasl2-dev \
-#    libcups2-dev \
-#    locales \
-#    && locale-gen en_US.UTF-8 && update-locale \
-#    && locale-gen es_AR.UTF-8 && update-locale \
-#    && echo 'LANG="en_US.UTF-8"' > /etc/default/locale \
-#    && pip3 install --no-cache-dir --upgrade pip setuptools
-
-RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
-# num2words wheel vobject qrcode
-#    && apt-get purge -yqq build-essential '*-dev' \
-#    && apt-get -yqq autoremove \
-#    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# requisites for M2Crypto
-RUN apt-get update -qq
-RUN apt-get install build-essential python3-dev python-dev libssl-dev swig -y -qq
-
-COPY ./requirements /req
-RUN pip3 install -r /req/requirements.txt
-RUN pip3 install -r /req/adhoc-account-payment.txt
-RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/adhoc-argentina-reporting.txt
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-RUN pip3 install -r /req/adhoc-argentina-sale.txt
-RUN pip3 install -r /req/adhoc-miscellaneous.txt
-RUN pip3 install -r /req/adhoc-odoo-support.txt
-RUN pip3 install -r /req/adhoc-product.txt
-RUN pip3 install -r /req/adhoc-website.txt
-RUN pip3 install -r /req/oca-server-tools.txt
-RUN pip3 install -r /req/oca-web.txt
-RUN pip3 install -r /req/oca-rest-framework.txt
-RUN pip3 install -r /req/oca-partner-contact.txt
-RUN pip3 install -r /req/odoo-com.txt
-RUN pip3 install -r /req/fecr.txt
-RUN pip3 install -r /req/meli-requirements.txt
-#RUN pip3 install -r /req/adhoc-reporting-engine.txt # esto no anda por el pycups
-RUN rm -r /req
-
-# crear cache para pyafipws
-RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-RUN chmod o+rw /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-
-# create directory for odoo files
 ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
-ENV CUSTOM_ADDONS /opt/odoo/custom-addons
-ENV EXTRA_ADDONS /opt/odoo/extra-addons
-RUN mkdir -p /opt/odoo \
-    && mkdir -p ${ETC_DIR} \
+ENV LOG_DIR /var/log/odoo
+ENV BKP_DIR /var/odoo/backups
+ENV ADDONS_DIR /opt/odoo/custom-addons
+ENV ODOO_RC ${ETC_DIR}/odoo.conf
+RUN \
+       mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
-    && mkdir -p ${CUSTOM_ADDONS} \
-    && mkdir -p ${EXTRA_ADDONS} \
-    && chown -R odoo.odoo /opt/odoo
+    && mkdir -p ${LOG_DIR} \
+    && mkdir -p ${BKP_DIR} \
+    && mkdir -p ${ADDONS_DIR} \
+    && chown -R odoo.odoo /opt/odoo \
+    && chown -R odoo.odoo /var/odoo
+
+# instalar el ultimo pip
+RUN pip3 install --upgrade pip
+
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    git python3-dev build-essential
+
+RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
+
+# requisitos para M2Crypto
+RUN apt-get install python-dev libssl-dev swig -y -qq
+
+COPY ./requirements /req
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+RUN pip3 install -r /req/adhoc-odoo-argentina.txt
+RUN pip3 install --ignore-installed -r /req/openupgradelib.txt
+RUN rm -r /req
+
+# crear cache para pyafipws lo necesita para actualizar desde padron y darle
+# permisos para que pueda escribir desde pyafipws porque ahi hay una base
+# sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
+RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
+RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
+
+# bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
+# parece que la afip tiene un cifrado debil.
+RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
 USER odoo
