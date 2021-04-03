@@ -115,7 +115,6 @@ RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/
 #    && apt-get -yqq autoremove \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# requisites for M2Crypto
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     build-essential \
     python3-dev \
@@ -126,6 +125,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 
 COPY ./requirements /req
 RUN     pip3 install -r /req/adhoc-account-payment.txt \
+    &&  pip3 install -r /req/l10n_ar_fe_qr.txt \
     &&  pip3 install -r /req/adhoc-aeroo_reports.txt \
     &&  pip3 install -r /req/adhoc-argentina-reporting.txt \
     &&  pip3 install -r /req/adhoc-odoo-argentina.txt \
@@ -142,7 +142,6 @@ RUN     pip3 install -r /req/adhoc-account-payment.txt \
     &&  pip3 install -r /req/fecr.txt \
     &&  pip3 install -r /req/oca-openupgradelib.txt \
     &&  pip3 install -r /req/requirements.txt \
-    &&  pip3 install -r /req/l10n_ar_fe_qr.txt \
     && rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
