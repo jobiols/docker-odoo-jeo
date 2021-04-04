@@ -1,2 +1,2 @@
-shapely
-geojson
+shapely==1.7.1
+geojson==2.5.0

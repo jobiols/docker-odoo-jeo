@@ -1,6 +1,6 @@
-checksumdir
-raven
-pysftp
-acme_tiny
-IPy
-pyopenssl
+checksumdir==1.1.7
+raven==6.10.0
+pysftp==0.2.9
+acme_tiny==4.1.0
+IPy==1.01
+pyopenssl==20.0.1

@@ -1,1 +1,1 @@
-pdf2image
+pdf2image==1.14.0

@@ -1,1 +1,1 @@
-validate_email
+validate_email==1.3

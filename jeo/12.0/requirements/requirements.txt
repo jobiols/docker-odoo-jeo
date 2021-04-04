@@ -1,4 +1,4 @@
-pysftp
-erppeek
-markdown
-PyPDF2
+pysftp==0.2.9
+erppeek==1.7.1
+markdown==3.3.4
+PyPDF2==1.26.0

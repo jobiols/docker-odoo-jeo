@@ -1,6 +1,6 @@
-raven
-openpyxl
-xlrd
-xlwt
-pysftp
-pygount
+raven==6.10.0
+openpyxl==3.0.7
+xlrd==1.2.6
+xlwt==1.3.0
+pysftp==0.2.9
+pygount==1.2.4

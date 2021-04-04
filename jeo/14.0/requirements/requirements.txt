@@ -1,5 +1,1 @@
 pysftp
-# requerimientos de aeroo
-#git+https://github.com/adhoc-dev/aeroolib@master-fix-ods
-#git+https://github.com/aeroo/currency2text.git
-#pyPDF2

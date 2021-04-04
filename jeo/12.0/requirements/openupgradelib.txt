@@ -1,6 +1,6 @@
-wheel
-coveralls
-flake8
-pep8-naming
-lxml<=4.3.4
-psycopg2==2.7.3.1
+wheel==0.36.2
+coveralls==3.0.1
+flake8==3.9.0
+pep8-naming==0.11.1
+lxml==4.6.3
+psycopg2==2.7.7

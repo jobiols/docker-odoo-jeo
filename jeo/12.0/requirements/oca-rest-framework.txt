@@ -1,6 +1,9 @@
-cerberus
-pyquerystring
-parse-accept-language
-jsondiff
-graphene
-graphql-server-core
+cerberus==1.3.2
+pyquerystring==1.1
+parse-accept-language==0.1.2
+jsondiff==1.2.3
+graphene==2.1.8
+graphql-server-core==2.0.0
+marshmallow==3.11.1
+marshmallow-objects==2.3.0
+apispec==4.4.0

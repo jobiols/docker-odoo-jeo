@@ -1,4 +1,4 @@
-jsonschema
-xmlsig
-urlparse3
-phonenumbers
+jsonschema==3.2.0
+xmlsig==0.1.4
+urlparse3==1.1
+phonenumbers==8.12.20
