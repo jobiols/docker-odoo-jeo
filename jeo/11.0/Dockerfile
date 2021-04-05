@@ -93,8 +93,14 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
+# instalar ultima version de pip
+RUN curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py -o get-pip.py
+RUN python3 get-pip.py
+RUN pip install install --ignore-installed psycopg2-binary
+
 # Other requirements, useful tools and recommendations to run Odoo (libldap2-dev
-# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html). libcups2-dev is for aeroo. Then install locales and later clean everything
+# libsasl2-dev re recommended by odoo here https://www.odoo.com/documentation/11.0/setup/install.html).
+# libcups2-dev is for aeroo. Then install locales and later clean everything
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git ssh wget unzip iputils-ping \
     libldap2-dev \
