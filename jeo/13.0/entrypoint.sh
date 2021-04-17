@@ -1,29 +1,48 @@
 #!/bin/bash
 
 set -e
-
 echo "Odoo $ODOO_VERSION Release $ODOO_RELEASE by jeo Software"
 
-# set the postgres database host, port, user and password according to the environment
-# and pass them as arguments to the odoo process if not present in the config file
-: ${HOST:=${DB_PORT_5432_TCP_ADDR:='db'}}
-: ${PORT:=${DB_PORT_5432_TCP_PORT:=5432}}
-: ${USER:=${DB_ENV_POSTGRES_USER:=${POSTGRES_USER:='odoo'}}}
-: ${PASSWORD:=${DB_ENV_POSTGRES_PASSWORD:=${POSTGRES_PASSWORD:='odoo'}}}
+# set the postgres database host, port, user and password according to the odoo.conf
+# if not present in config file set defaults
+
+# WARNING: the parameters in odoo.conf must habe spaces surrondnig the equal sign
+# i.e. db_host = myhost GOOD
+# i.e. db_host=myhost BAD
+
+# Defaults, taken if parameters not found in odoo.conf
+HOST='db'
+PORT=5432
+POSTGRES_USER='odoo'
+POSTGRES_PASSWORD='odoo'
 
 DB_ARGS=()
 function check_config() {
-    param="$1"
-    value="$2"
-    if ! grep -q -E "^\s*\b${param}\b\s*=" "$ODOO_RC" ; then
-        DB_ARGS+=("--${param}")
-        DB_ARGS+=("${value}")
-   fi;
+    DB_ARGS+=("--$1")
+    # Find the line starting with $1 and get the string after equal sign
+    TMP=$(grep -E "^$1.*=" $ODOO_RC | awk '{print $3}')
+    # Apply defaults if the parameter is not found in odoo.conf
+    if [ -z $TMP ]; then
+        if [ $1 == "db_host" ]; then
+            DB_ARGS+=($HOST)
+        fi
+        if [ $1 == "db_port" ]; then
+            DB_ARGS+=($PORT)
+        fi
+        if [ $1 == "db_user" ]; then
+            DB_ARGS+=($POSTGRES_USER)
+        fi
+        if [ $1 == "db_password" ]; then
+            DB_ARGS+=($POSTGRES_PASSWORD)
+        fi
+    else
+        DB_ARGS+=($TMP)
+    fi
 }
-check_config "db_host" "$HOST"
-check_config "db_port" "$PORT"
-check_config "db_user" "$USER"
-check_config "db_password" "$PASSWORD"
+check_config "db_host"
+check_config "db_port"
+check_config "db_user"
+check_config "db_password"
 
 case "$1" in
     -- | odoo)
