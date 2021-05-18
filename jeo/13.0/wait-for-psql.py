@@ -28,7 +28,8 @@ if __name__ == '__main__':
             error = e
         else:
             conn.close()
-        print('Waiting for database connection...')
+        print('Trying to connect to', args.db_user, args.db_host, args.db_port,
+              args.db_password)
         time.sleep(1)
 
     if error:

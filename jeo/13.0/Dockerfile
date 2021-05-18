@@ -54,7 +54,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ENV ODOO_RELEASE=20210413
+ENV ODOO_RELEASE=20210516
 #ARG ODOO_SHA=0d5d6cac754a61713d9a6e0bb226a51fee70941b
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -129,6 +129,7 @@ RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN pip3 install -r /req/database-autobackup.txt
 RUN pip3 install -r /req/odoo-etl.txt
+RUN pip3 install -r /req/varios.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
