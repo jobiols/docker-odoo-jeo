@@ -1,1 +1,4 @@
 mercadopago==2.0.6
+
+# a pedido de sebatista
+suds==0.4
