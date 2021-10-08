@@ -67,10 +67,10 @@ RUN echo "deb http://deb.nodesource.com/node_8.x stretch main" > /etc/apt/source
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
-ENV ODOO_RELEASE=20210705
-#ARG ODOO_SHA=73dd74d0185588fbe052471217b28c1f796a542c
+ARG ODOO_RELEASE=20210702
+ARG ODOO_SHA=5c07ed019be6158129e974eced0ee26967b8767f
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && apt-get update \
         && apt-get -y install --no-install-recommends ./odoo.deb \
         && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -124,7 +124,9 @@ RUN \
     && chown -R odoo.odoo /var/odoo
 
 # instalar el ultimo pip
-RUN pip3 install --upgrade pip
+RUN curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py -o get-pip.py \
+    && python3 get-pip.py \
+    && rm get-pip.py
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential

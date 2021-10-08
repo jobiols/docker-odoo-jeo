@@ -1,10 +1,11 @@
-pyOpenSSL==20.0.1
-M2Crypto==0.37.1
-httplib2>=0.7
-git+https://github.com/pysimplesoap/pysimplesoap@stable_py3k
-# fpdf>=1.7.2
-# dbf>=0.88.019
-# Pillow>=2.0.0
-# git+https://github.com/OCA/openupgradelib/@master
-# git+https://github.com/reingart/pyafipws@py3k
+#    pyOpenSSL
+#    M2Crypto; python_version != '3.6'
+#    M2Crypto<=0.36.0; python_version == '3.6'
+#    httplib2>=0.7
+#    git+https://github.com/pysimplesoap/pysimplesoap@a330d9c4af1b007fe1436f979ff0b9f66613136e
+#    # fpdf>=1.7.2
+#    # dbf>=0.88.019
+#    # Pillow>=2.0.0
+#    # git+https://github.com/OCA/openupgradelib/@master
+#    # git+https://github.com/reingart/pyafipws@py3k
 git+https://github.com/ingadhoc/pyafipws@py3k
