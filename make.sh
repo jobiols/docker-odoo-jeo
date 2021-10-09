@@ -11,10 +11,12 @@ cd /odoo_ar/odoo-13.0/
 sudo rm -r dist-local-packages dist-packages extra-addons
 cd /odoo_ar/odoo-14.0/
 sudo rm -r dist-local-packages dist-packages extra-addons
+cd /odoo_ar/odoo-15.0/
+sudo rm -r dist-local-packages dist-packages extra-addons
 
 CD="/home/jobiols/git-repos/docker-odoo-jeo/jeo"
 
-versions=( 11.0 12.0 13.0 14.0 )
+versions=( 12.0 13.0 14.0 15.0 )
 
 for version in ${versions[@]}
 do

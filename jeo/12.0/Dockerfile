@@ -67,10 +67,10 @@ RUN echo "deb http://deb.nodesource.com/node_8.x stretch main" > /etc/apt/source
 
 # Install Odoo
 ENV ODOO_VERSION 12.0
-ARG ODOO_RELEASE=20210702
-ARG ODOO_SHA=5c07ed019be6158129e974eced0ee26967b8767f
+ARG ODOO_RELEASE=20211009
+#ARG ODOO_SHA=5c07ed019be6158129e974eced0ee26967b8767f
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && apt-get update \
         && apt-get -y install --no-install-recommends ./odoo.deb \
         && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -131,15 +131,13 @@ RUN curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py -o get-pip.py \
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential
 
-RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
-
 # requisitos para M2Crypto
 RUN apt-get install python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-RUN pip3 install --ignore-installed -r /req/openupgradelib.txt
+#RUN pip3 install -r /req/openupgradelib.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle

@@ -60,9 +60,9 @@ RUN npm install -g rtlcss
 # Install Odoo
 ENV ODOO_VERSION 15.0
 ARG ODOO_RELEASE=20211007
-ARG ODOO_SHA=aee026f813f334400aa49dc857d4043719f8f395
+#ARG ODOO_SHA=aee026f813f334400aa49dc857d4043719f8f395
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
     && apt-get -y install --no-install-recommends ./odoo.deb \
     && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -78,7 +78,7 @@ RUN chown odoo /etc/odoo/odoo.conf \
 VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
 # Expose Odoo services
-EXPOSE 8069 8071 8072
+EXPOSE 8069 8071
 
 # Set the default config file
 ENV ODOO_RC /etc/odoo/odoo.conf
@@ -100,42 +100,38 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
-# ENV ETC_DIR /opt/odoo/etc
-# ENV DATA_DIR /opt/odoo/data
-# ENV LOG_DIR /var/log/odoo
-# ENV BKP_DIR /var/odoo/backups
-# ENV ADDONS_DIR /opt/odoo/custom-addons
-# ENV ODOO_RC ${ETC_DIR}/odoo.conf
-# RUN \
-#        mkdir -p ${ETC_DIR} \
-#     && mkdir -p ${DATA_DIR} \
-#     && mkdir -p ${LOG_DIR} \
-#     && mkdir -p ${BKP_DIR} \
-#     && mkdir -p ${ADDONS_DIR} \
-#     && chown -R odoo.odoo /opt/odoo \
-#     && chown -R odoo.odoo /var/odoo
+ENV ETC_DIR /opt/odoo/etc
+ENV DATA_DIR /opt/odoo/data
+ENV LOG_DIR /var/log/odoo
+ENV BKP_DIR /var/odoo/backups
+ENV ADDONS_DIR /opt/odoo/custom-addons
+ENV ODOO_RC ${ETC_DIR}/odoo.conf
+RUN \
+       mkdir -p ${ETC_DIR} \
+    && mkdir -p ${DATA_DIR} \
+    && mkdir -p ${LOG_DIR} \
+    && mkdir -p ${BKP_DIR} \
+    && mkdir -p ${ADDONS_DIR} \
+    && chown -R odoo.odoo /opt/odoo \
+    && chown -R odoo.odoo /var/odoo
 
-# # instalar el ultimo pip
-# RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-#     && python3 get-pip.py \
-#     && rm get-pip.py
+# instalar el ultimo pip
+RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3 get-pip.py \
+    && rm get-pip.py
 
-# RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-#     git python3-dev build-essential
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    git python3-dev build-essential
 
-# RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
+RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 
 # # requisitos para M2Crypto
 # #RUN apt-get update -qq
 # RUN apt-get install python-dev libssl-dev swig -y -qq
 
-# COPY ./requirements /req
-# RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt
-# RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-# RUN pip3 install -r /req/database-autobackup.txt
-# RUN pip3 install -r /req/odoo-etl.txt
-# RUN pip3 install -r /req/varios.txt
-# RUN rm -r /req
+COPY ./requirements /req
+RUN pip3 install -r /req/requirements.txt
+RUN rm -r /req
 
 # # crear cache para pyafipws lo necesita para actualizar desde padron y darle
 # # permisos para que pueda escribir desde pyafipws porque ahi hay una base
