@@ -1,0 +1,7 @@
+paramiko==2.7.1
+
+# automatic Backup
+pysftp==0.2.9
+dropbox==10.4.1
+PyDrive==1.3.1
+boto3==1.14.52

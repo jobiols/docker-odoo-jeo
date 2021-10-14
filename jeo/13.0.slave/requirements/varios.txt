@@ -1,0 +1,6 @@
+mercadopago==2.0.6
+
+# a pedido de sebatista le habia instalado el 0.4
+# Ya no se puede instalar suds 0.4 el que se instala es 0.3.5, si lo necesita otra vez
+# se le puede poner
+# suds==0.4
