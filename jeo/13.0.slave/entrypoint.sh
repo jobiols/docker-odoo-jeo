@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 
 set -e
 echo "Odoo $ODOO_VERSION Release $ODOO_RELEASE by jeo Software"

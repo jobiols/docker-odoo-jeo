@@ -1,21 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/ash
 # este script corre dentro de la imagen
-
-set -e
 
 # eliminar el directorio /backup/temp si es que existe
 rm -rf /backup/tmp
 
 # si el parametro zipfile esta vacio busco el ultimo backup
 if [[ -z "${ZIPFILE}" ]]; then
-    echo "Searching for latest local backup"
-    unset -v latest
-    for file in "/backup"/*.zip; do
-      [[ $file -nt $latest ]] && ZIPFILE=$file
-    done
+    ZIPFILE=$(ls /backup/*.zip -1 -S | tail -n 1)
     echo "Latest file is $ZIPFILE"
 else
     ZIPFILE="/backup/$ZIPFILE"
+    echo "The selected file is $ZIPFILE"
 fi
 
 unzip -q -d /backup/tmp ${ZIPFILE}
@@ -68,7 +63,7 @@ psql -U odoo -h db -d ${NEW_DBNAME} -q < /backup/tmp/dump.sql >/dev/null
 # si estoy en desarrollo desactivo la BD
 if [[ -z "$DEACTIVATE" ]]
 then
-    echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS --NOT-- DEACTIVATED"
+    echo "RESTORE FIHISHED FOR ${NEW_DBNAME} WARNING, DATABASE IS --NOT-- DEACTIVATED"
 else
     psql -U odoo -h db -d ${NEW_DBNAME} -q < /deactivate.sql
     echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS DEACTIVATED"
