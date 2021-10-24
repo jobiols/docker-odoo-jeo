@@ -6,7 +6,7 @@ rm -rf /backup/tmp
 
 # si el parametro zipfile esta vacio busco el ultimo backup
 if [[ -z "${ZIPFILE}" ]]; then
-    ZIPFILE=$(ls /backup/*.zip -1 -S | tail -n 1)
+    ZIPFILE=$(ls /backup/*.zip -t | head -1)
     echo "Latest file is $ZIPFILE"
 else
     ZIPFILE="/backup/$ZIPFILE"
