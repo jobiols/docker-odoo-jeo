@@ -2,6 +2,6 @@ wheel
 coveralls
 flake8
 pep8-naming
-lxml<=4.3.4
+lxml<=4.7.1
 psycopg2==2.7.3.1
 git+https://github.com/OCA/openupgradelib/@master
