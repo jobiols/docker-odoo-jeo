@@ -131,23 +131,27 @@ RUN curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py -o get-pip.py \
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential
 
+# Para que instale openupgradelib
+RUN pip3 install setuptools-scm
+
 # requisitos para M2Crypto
-RUN apt-get install python-dev libssl-dev swig -y -qq
+#RUN apt-get install python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req
-RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/adhoc-odoo-argentina.txt
-#RUN pip3 install -r /req/openupgradelib.txt
+#RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+#RUN pip3 install -r /req/adhoc-odoo-argentina.txt
+#RUN pip3 install -r /req/requirements.txt
+RUN pip3 install -r /req/openupgradelib.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
 # permisos para que pueda escribir desde pyafipws porque ahi hay una base
 # sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
-RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
-RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
+#RUN mkdir /usr/local/lib/python3.5/dist-packages/pyafipws/cache
+#RUN chmod -R o+w /usr/local/lib/python3.5/dist-packages/pyafipws
 
 # bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
-USER odoo
+#USER odoo
