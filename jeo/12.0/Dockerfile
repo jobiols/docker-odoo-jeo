@@ -143,6 +143,7 @@ COPY ./requirements /req
 #RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 #RUN pip3 install -r /req/adhoc-odoo-argentina.txt
 RUN pip3 install -r /req/requirements.txt
+#RUN pip3 install -r /req/requirements1.txt
 RUN pip3 install -r /req/openupgradelib.txt
 RUN rm -r /req
 
