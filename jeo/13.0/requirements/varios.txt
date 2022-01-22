@@ -1,3 +1,5 @@
 mercadopago==2.0.6
+suds==1.0.0
 
-suds
+# para report-print-send
+pickups==0.8.0
