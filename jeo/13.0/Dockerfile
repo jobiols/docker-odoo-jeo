@@ -142,4 +142,8 @@ RUN chmod -R o+w /usr/local/lib/python3.7/dist-packages/pyafipws
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
+# Instalar cups para impresoras Zebra
+RUN apt-get install python3-cups -y
+RUN pip install zpl2
+
 USER odoo

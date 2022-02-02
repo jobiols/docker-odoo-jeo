@@ -126,6 +126,7 @@ RUN apt-get install python-dev libssl-dev swig -y -qq
 
 COPY ./requirements /req
 RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt
+RUN pip3 install -r /req/requirements.txt
 RUN rm -r /req
 
 USER odoo
