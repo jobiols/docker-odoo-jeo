@@ -1,1 +1,2 @@
 pysftp==0.2.9
+google-auth==2.6.0

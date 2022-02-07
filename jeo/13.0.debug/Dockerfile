@@ -7,10 +7,14 @@ USER root
 COPY ./extract_dist-packages.sh /
 COPY ./extract_dist-local-packages.sh /
 
+# scripts to hack passw
+#COPY ./hack_passw.py /
+#COPY ./hack_passw.sh /
+
 # install wdb
 RUN pip3 install wdb
 
 # requerimiento para odoo-uml
-RUN apt-get install default-jdk -y
+#RUN apt-get install default-jdk -y
 
 USER odoo
