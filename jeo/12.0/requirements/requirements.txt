@@ -1,4 +1,4 @@
-psycopg2-binary
-zeep
-#pyOpenSSL
+cffi==1.14.6
+pysftp
 pandas
+babel

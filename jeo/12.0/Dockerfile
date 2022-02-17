@@ -134,7 +134,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 RUN apt-get install python3-openssl libxmlsec1-openssl -y
 
 # Para que instale openupgradelib
-RUN pip3 install setuptools-scm
+#RUN pip3 install setuptools-scm
 
 # requisitos para M2Crypto
 #RUN apt-get install python-dev libssl-dev swig -y -qq
@@ -142,9 +142,10 @@ RUN pip3 install setuptools-scm
 COPY ./requirements /req
 #RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 #RUN pip3 install -r /req/adhoc-odoo-argentina.txt
+#RUN pip3 install -r /req/openupgradelib.txt
 RUN pip3 install -r /req/requirements.txt
-#RUN pip3 install -r /req/requirements1.txt
-RUN pip3 install -r /req/openupgradelib.txt
+RUN pip3 install -r /req/requirements2.txt
+#RUN pip3 install -r /req/openupgradelib.txt
 RUN rm -r /req
 
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle

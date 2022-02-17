@@ -1,9 +1,13 @@
+psycopg2-binary
+
+#pyOpenSSL
+pandas
+
 altair
-cffi
 appdirs
 asn1crypto
 attrs
-Babel
+
 bcrypt
 beautifulsoup4
 bokeh
@@ -53,7 +57,7 @@ ofxparse
 olefile
 openpyxl
 packaging
-pandas
+
 paramiko
 passlib
 pbr
@@ -81,7 +85,7 @@ pyparsing
 PyPDF2
 pyrsistent
 pyserial
-pysftp
+
 python-dateutil
 python-stdnum
 pytz
@@ -116,5 +120,7 @@ xmltodict
 zeep
 zipp
 zpl2
+
+cffi
 
 #xmlsec
