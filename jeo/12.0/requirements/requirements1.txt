@@ -112,7 +112,6 @@ urllib3
 vatnumber
 vobject
 Werkzeug
-xlrd
 XlsxWriter
 xlwt
 xmlsig

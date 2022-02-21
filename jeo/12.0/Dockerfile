@@ -29,7 +29,6 @@ RUN apt-get update \
             python3-slugify \
             python3-vobject \
             python3-watchdog \
-            python3-xlrd \
             python3-xlwt \
             xz-utils \
         && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.stretch_amd64.deb \
@@ -157,5 +156,6 @@ RUN rm -r /req
 # bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
 #RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
+RUN pip install --upgrade xlrd
 
 USER odoo
