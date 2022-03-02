@@ -1,4 +1,4 @@
-FROM debian:buster-slim AS base-image
+FROM debian:bullseye-slim AS base-image
 LABEL Odoo S.A. <info@odoo.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -30,24 +30,25 @@ RUN apt-get update \
             python3-xlrd \
             python3-xlwt \
             xz-utils \
+            python3-pdfminer \
         && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb \
         && echo 'ea8277df4297afc507c61122f3c349af142f31e5 wkhtmltox.deb' | sha1sum -c - \
         && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
         && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-        && GNUPGHOME="$(mktemp -d)" \
-        && export GNUPGHOME \
-        && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-        && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-        && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-        && gpgconf --kill all \
-        && rm -rf "$GNUPGHOME" \
-        && apt-get update  \
-        && apt-get install --no-install-recommends -y postgresql-client \
-        && rm -f /etc/apt/sources.list.d/pgdg.list \
-        && rm -rf /var/lib/apt/lists/*
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+    && GNUPGHOME="$(mktemp -d)" \
+    && export GNUPGHOME \
+    && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
+    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
+    && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
+    && gpgconf --kill all \
+    && rm -rf "$GNUPGHOME" \
+    && apt-get update  \
+    && apt-get install --no-install-recommends -y postgresql-client \
+    && rm -f /etc/apt/sources.list.d/pgdg.list \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install rtlcss (on Debian buster)
 RUN npm install -g rtlcss
@@ -135,8 +136,8 @@ RUN rm -r /req
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
 # permisos para que pueda escribir desde pyafipws porque ahi hay una base
 # sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
-RUN mkdir /usr/local/lib/python3.7/dist-packages/pyafipws/cache
-RUN chmod -R o+w /usr/local/lib/python3.7/dist-packages/pyafipws
+RUN mkdir /usr/local/lib/python3.9/dist-packages/pyafipws/cache
+RUN chmod -R o+w /usr/local/lib/python3.9/dist-packages/pyafipws
 
 # bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
