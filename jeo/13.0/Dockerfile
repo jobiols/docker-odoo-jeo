@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim AS base-image
+FROM debian:buster-slim AS base-image
 LABEL Odoo S.A. <info@odoo.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -30,14 +30,13 @@ RUN apt-get update \
             python3-xlrd \
             python3-xlwt \
             xz-utils \
-            python3-pdfminer \
         && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb \
         && echo 'ea8277df4297afc507c61122f3c349af142f31e5 wkhtmltox.deb' | sha1sum -c - \
         && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
         && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
     && GNUPGHOME="$(mktemp -d)" \
     && export GNUPGHOME \
     && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
@@ -55,10 +54,10 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20220221
-#ARG ODOO_SHA=f135b9d4967ef9221ff6aba58b1c4a3ea8334202
+ARG ODOO_RELEASE=20220225
+ARG ODOO_SHA=185dd6dd73213fac8fd042d6c408bd26f697d53e
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
         && apt-get update \
         && apt-get -y install --no-install-recommends ./odoo.deb \
         && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -136,15 +135,11 @@ RUN rm -r /req
 # crear cache para pyafipws lo necesita para actualizar desde padron y darle
 # permisos para que pueda escribir desde pyafipws porque ahi hay una base
 # sqlite que se usa cuando se refrescan actividades, impuestos y conceptos.
-RUN mkdir /usr/local/lib/python3.9/dist-packages/pyafipws/cache
-RUN chmod -R o+w /usr/local/lib/python3.9/dist-packages/pyafipws
+RUN mkdir /usr/local/lib/python3.7/dist-packages/pyafipws/cache
+RUN chmod -R o+w /usr/local/lib/python3.7/dist-packages/pyafipws
 
 # bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
-
-# Instalar cups para impresoras Zebra
-RUN apt-get install python3-cups -y
-RUN pip install zpl2
 
 USER odoo
