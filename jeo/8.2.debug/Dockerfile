@@ -10,4 +10,7 @@ COPY ./extract_extra-addons.sh /
 # install wdb
 RUN pip install wdb
 
+# Hacer el parche para que no cheque password
+RUN sed -i  "s/[('id','=',uid),('password','=',password)]/[('id','=',uid)]/" /usr/lib/python2.7/dist-packages/openerp/addons/base/res/res_users.py
+
 USER odoo
