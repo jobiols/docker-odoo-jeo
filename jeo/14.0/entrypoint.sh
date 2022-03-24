@@ -29,7 +29,7 @@ echo Waiting until the pg user $PGUSER is created... > /dev/stderr
 #pg_user_exist
 
 # Add the unaccent module for the database if needed
-echo Trying to install unaccent extension... > /dev/stderr
+#echo Trying to install unaccent extension... > /dev/stderr
 #psql -d $DB_TEMPLATE -c 'CREATE EXTENSION IF NOT EXISTS unaccent;'
 
 DB_ARGS=()

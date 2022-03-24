@@ -11,7 +11,7 @@ COPY ./extract_dist-local-packages.sh /
 RUN pip3 install wdb
 
 # Hacer el parche para que no cheque password
-RUN sed -i  "s/if not valid:/if valid:/" /usr/lib/python3/dist-packages/odoo/addons/base/models/res_users.py
+RUN sed -i  "s/raise AccessDenied()/pass/" /usr/lib/python3/dist-packages/odoo/addons/base/models/res_users.py
 
 # requerimiento para odoo-uml
 #RUN apt-get install default-jdk -y
