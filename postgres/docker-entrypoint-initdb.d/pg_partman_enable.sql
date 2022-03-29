@@ -1,2 +1,2 @@
 CREATE SCHEMA partman;
-CREATE EXTENSION pg_partman SCHEMA partman;
+CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
