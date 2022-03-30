@@ -17,3 +17,5 @@ RUN set -x \
 
 COPY docker-entrypoint-initdb.d/* /docker-entrypoint-initdb.d/
 COPY ./docker-entrypoint-after-initdb.sh /docker-entrypoint-initdb.d/
+
+RUN service postgresql restart
