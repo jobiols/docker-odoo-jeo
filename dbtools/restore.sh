@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/bash
 # este script corre dentro de la imagen
 
 # eliminar el directorio /backup/temp si es que existe
