@@ -10,4 +10,7 @@ COPY ./extract_dist-local-packages.sh /
 # install wdb
 RUN pip3 install wdb
 
+# Correr un demonio para atrapar los mails.
+RUN python3 -m smtpd -n -c DebuggingServer localhost:2500 >  /var/log/odoo/maillog.txt &
+
 USER odoo
