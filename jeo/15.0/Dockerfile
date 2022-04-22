@@ -123,7 +123,7 @@ RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
+RUN pip3 install -r /req/odoo-argentina.txt
 RUN rm -r /req
-
 
 USER odoo
