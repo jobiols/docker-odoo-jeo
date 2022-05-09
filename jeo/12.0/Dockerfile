@@ -133,7 +133,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 RUN apt-get install python3-openssl libxmlsec1-openssl -y
 
 # Para que instale openupgradelib
-RUN pip3 install setuptools-scm
+RUN pip3 install setuptools-scm psycopg2-binary
 
 # requisitos para M2Crypto
 #RUN apt-get install python-dev libssl-dev swig -y -qq
