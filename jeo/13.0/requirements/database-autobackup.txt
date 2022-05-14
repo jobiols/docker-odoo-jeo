@@ -1,4 +1,4 @@
-paramiko==2.7.1
+paramiko==2.10.1
 
 # automatic Backup
 pysftp==0.2.9
