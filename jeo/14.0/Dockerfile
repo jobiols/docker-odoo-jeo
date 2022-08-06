@@ -130,4 +130,4 @@ RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN rm -r /req
 
-#USER odoo
+USER odoo
