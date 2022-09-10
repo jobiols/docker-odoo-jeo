@@ -55,7 +55,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 15.0
-ARG ODOO_RELEASE=20220620
+ARG ODOO_RELEASE=20220910
 ARG ODOO_SHA=38e219e59c019757bc0662e90e2f2586faf93f5e
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
     && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -124,6 +124,7 @@ RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/odoo-argentina.txt
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN rm -r /req
 
 USER odoo
