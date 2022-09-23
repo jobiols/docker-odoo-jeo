@@ -1,1 +1,2 @@
-git+https://github.com/OCA/openupgradelib/@master
+# No se instala le ponemos la pip install openupgradelib
+#git+https://github.com/OCA/openupgradelib/@master

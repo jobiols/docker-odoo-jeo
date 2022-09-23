@@ -111,7 +111,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     && locale-gen es_AR.UTF-8 && update-locale \
     && echo 'LANG="en_US.UTF-8"' > /etc/default/locale
 
-RUN pip3 install wheel vobject qrcode git+https://github.com/OCA/openupgradelib/@master \
+RUN pip3 install wheel vobject qrcode openupgradelib \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
