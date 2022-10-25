@@ -9,7 +9,7 @@ sudo docker run --rm -i \
     --env NEW_DBNAME=database_name \
     --env ZIPFILE=backup_a_restaurar \
     --env DEACTIVATE=True \
-    jobiols/dbtools
+    jobiols/dbtools:1.4.0
 
 - postgres_image: nombre de la imagen donde esta el servidor postgres
 - path_al_filestore: ubicacion del filestore a restaurar
