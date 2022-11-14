@@ -125,6 +125,7 @@ COPY ./requirements /req
 RUN pip3 install -r /req/requirements.txt
 RUN pip3 install -r /req/odoo-argentina.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
+RUN pip3 install -r /req/database-autobackup.txt
 RUN rm -r /req
 
 USER odoo
