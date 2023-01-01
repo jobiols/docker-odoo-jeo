@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--restore","--base","/home/jobiols/tmp/pp","--db_name","testeo"],
+            "args": ["--restore","--base","/odoo/ar/odoo-13.0/potenciar13","--db_name","potenciar13_prod"],
             "type": "python",
             "request": "launch",
             "program": "${file}",
