@@ -161,9 +161,9 @@ RUN sed -i '1530a\    if not domain_data["version"] == "1.0":' /usr/lib/python3/
 RUN sed -i '1531a\        return dbs' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1532a\    for database in domain_data["databases"]:' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1533a\        dbname = list(database.keys())[0]' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1534a\        values = list(database.values())[0]' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1534a\        values = list(database.values())[0];_logger.info(h)' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1535a\        if h in values:' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1536a\            logger.info("Match ------------> %s %s",h,  dbname)' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1536a\            _logger.info("Match -----------> %s %s",h,  dbname)' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1537a\            return [dbname]' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1538a\    return dbs' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1539a\  ' /usr/lib/python3/dist-packages/odoo/http.py
