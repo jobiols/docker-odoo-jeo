@@ -149,21 +149,22 @@ RUN sed -i '1530i\        dbs = multidomain_get_db(dbs, odoo.tools.config, d, h)
 RUN sed -i '1519a\def multidomain_get_db(dbs, config, d, h):' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1520a\    """ Devolver la base de datos basado en la estructura del dominio y el archivo de definiciones """' /usr/lib/python3/dist-packages/odoo/http.py
 RUN sed -i '1521a\    path = os.path.dirname(config.rcfile)' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1522a\    filename = f"{path}/{config['dbfilter']}"' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1523a\    import yaml' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1524a\    with open(filename, 'r') as stream:' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1525a\        try:' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1526a\            domain_data = yaml.safe_load(stream)' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1527a\        except yaml.YAMLError as ex:' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1528a\            return dbs' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1529a\    if not domain_data['version'] == '1.0':' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1530a\        return dbs' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1531a\    for database in domain_data['databases']:' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1532a\        dbname = list(database.keys())[0]' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1533a\        values = list(database.values())[0]' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1534a\        if h in values:' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1535a\            return [dbname]' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1536a\    return dbs' /usr/lib/python3/dist-packages/odoo/http.py
-RUN sed -i '1537a\  ' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1522a\    DBFILTER = "dbfilter"' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1523a\    filename = f"{path}/{config[DBFILTER]}"' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1524a\    import yaml' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1525a\    with open(filename) as stream:' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1526a\        try:' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1527a\            domain_data = yaml.safe_load(stream)' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1528a\        except yaml.YAMLError as ex:' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1529a\            return dbs' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1530a\    if not domain_data["version"] == "1.0":' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1531a\        return dbs' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1532a\    for database in domain_data["databases"]:' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1533a\        dbname = list(database.keys())[0]' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1534a\        values = list(database.values())[0]' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1535a\        if h in values:' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1536a\            return [dbname]' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1537a\    return dbs' /usr/lib/python3/dist-packages/odoo/http.py
+RUN sed -i '1538a\  ' /usr/lib/python3/dist-packages/odoo/http.py
 
 USER odoo
