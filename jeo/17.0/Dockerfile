@@ -17,7 +17,9 @@ RUN apt-get update && \
         libssl-dev \
         node-less \
         npm \
+        python3-magic \
         python3-num2words \
+        python3-odf \
         python3-pdfminer \
         python3-pip \
         python3-phonenumbers \
@@ -55,8 +57,8 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 17.0
-ARG ODOO_RELEASE=20230522
-ARG ODOO_SHA=e737da6d601f011803fa66c6af297688c3e45fd4
+ARG ODOO_RELEASE=20230630
+#ARG ODOO_SHA=e737da6d601f011803fa66c6af297688c3e45fd4
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/master/nightly/deb/odoo_16.4alpha1."${ODOO_RELEASE}"_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
