@@ -10,20 +10,8 @@ RUN apt-get update \
             python3-pip \
             zip \
             unzip
-            # libssl-dev \
-            # node-less \
-            # python3-num2words \
-            # python3-phonenumbers \
-            # python3-pyldap \
-            # python3-qrcode \
-            # python3-renderpm \
-            # python3-setuptools \
-            # python3-slugify \
-            # python3-vobject \
-            # python3-watchdog \
 
     RUN pip install psycopg2-binary
-
 
 # install latest postgresql-client
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
