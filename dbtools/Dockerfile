@@ -39,9 +39,9 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
 
-ADD restore.py /restore.py
+ADD dbtools.py /dbtools.py
 ADD extend.sh /usr/bin/extend.sh
 ADD deactivate.sql /
 ADD extend.sql /
 
-ENTRYPOINT ["/restore.py"]
+ENTRYPOINT ["/dbtools.py"]

@@ -16,7 +16,8 @@ def get_backup_filename(args):
     # Obtener el backup a restaurar
     print('Get Backup Filename')
     if args.zipfile:
-        backup_filename = "%s/backup_dir/%s" % (args.base, args.zipfile)
+        backup_filename = f"/{args.base}/backup_dir/{args.zipfile}"
+        print(backup_filename)
         print("The selected backup is " + backup_filename)
         return backup_filename
     else:
@@ -57,7 +58,7 @@ def deflate_zip(args, backup_filename, tempdir):
     return tempdir + '/dump.sql'
 
 def killing_db_connections(args, cur):
-    print("Killing backend connections to %s" % args.db_name)
+    print(f"Killing backend connections to {args.db_name}")
     sql = (""" SELECT pg_terminate_backend(pid) FROM pg_stat_activity
                WHERE datname = '%s';
         """ % args.db_name
@@ -65,24 +66,23 @@ def killing_db_connections(args, cur):
     cur.execute(sql)
 
 def drop_database(args, cur):
-    sql = "DROP DATABASE IF EXISTS %s;" % args.db_name
+    sql = f"DROP DATABASE IF EXISTS {args.db_name};"
     cur.execute(sql)
 
 def create_database(args, cur):
-    sql = "CREATE DATABASE %s;" % args.db_name
+    sql = f"CREATE DATABASE {args.db_name};"
     cur.execute(sql)
 
 def do_restore_database(args, backup_filename):
     """ Restore database and filestore """
 
     with tempfile.TemporaryDirectory() as tempdir:
-
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
         dump_filename = deflate_zip(args, backup_filename, tempdir)
-
         with open(dump_filename, 'r') as d_filename:
             # Run psql command as a subprocess, and specify that the dump file should
             # be passed as standard input to the psql process
+            os.environ["PGPASSWORD"] = 'odoo'
             process = subprocess.run(
                 ['psql',
                 '-U','odoo',
@@ -91,21 +91,19 @@ def do_restore_database(args, backup_filename):
                 stdout=subprocess.PIPE,
                 stdin=d_filename
             )
-        print(process.stdout.decode())
 
         if int(process.returncode) != 0:
-            print('The restored proces end with error %s' % process.returncode)
-            exit()
+            print(f'The restored proces end with error {process.returncode}')
+            exit(1)
 
 def deactivate_database(args, cur):
-
     with open('deactivate.sql') as _f:
         sql = _f.readlines()
     cur.execute(sql)
 
 def restore_database(args):
     """ Restore database """
-    print('Restoring Database %s' % args.db_name)
+    print(f'Restoring Database "{args.db_name}"')
 
     if not args.db_name:
         print("missing --db-name argument")
@@ -137,15 +135,15 @@ def restore_database(args):
         print("RESTORE FIHISHED FOR %s WARNING, DATABASE IS --NOT-- DEACTIVATED" % args.db_name)
 
 if __name__ == "__main__":
+
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--base",default="/base")
-    arg_parser.add_argument("--db_name")
-    arg_parser.add_argument("--zipfile")
+    arg_parser.add_argument("--base", default="/base", help='Base dir')
+    arg_parser.add_argument("--db_name", help='Database Name')
+    arg_parser.add_argument("--zipfile", help='Zip file with odoo database')
     arg_parser.add_argument("--restore", action="store_true")
     arg_parser.add_argument("--deactivate", action="store_true")
     args = arg_parser.parse_args()
 
     print('Restore Database V1.4.0')
-    print('argumentos -->', args)
     if args.restore:
         restore_database(args)
