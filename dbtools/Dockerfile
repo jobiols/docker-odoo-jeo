@@ -1,5 +1,5 @@
 FROM debian:bullseye-slim
-LABEL Jorge Obiols <jorge.obiols@gmail.com>
+LABEL maintainer Jorge Obiols <jorge.obiols@gmail.com>
 
 RUN apt-get update \
         && apt-get install -y --no-install-recommends \
@@ -26,6 +26,8 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
     && apt-get install --no-install-recommends -y postgresql-client-15 \
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
+
+RUN pip install pytz
 
 ADD dbtools.py /dbtools.py
 ADD extend.sh /usr/bin/extend.sh

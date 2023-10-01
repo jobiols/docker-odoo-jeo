@@ -5,11 +5,11 @@
 # capacidad de usar multiples cores
 sd build --rm=true -t jobiols/dbtools:1.4.0 ./
 
-echo "iniciando restore test"
+echo "iniciando Test"
 echo
 
 # restore normal
 sudo docker run --rm -i \
     --link pg-bukito:db \
     -v /odoo/ar/odoo-16.0e/bukito:/base \
-    jobiols/dbtools:1.4.0  --db_name bukito_prod1 --restore --no-neutralize
+    jobiols/dbtools:1.4.0 --db_name bukito_prod --backup 

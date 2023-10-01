@@ -9,10 +9,29 @@ import tempfile
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import os, glob
-import pwd, grp
-
+import datetime
 from zipfile import ZipFile
+import zipfile
 import shutil
+import pytz
+
+
+def get_restore_filename(args):
+    """Obtener el nombre del archivo hacia el cual backupear"""
+    if args.zipfile:
+        backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
+        # Verificar si el archivo existe y terminar con error
+        if os.path.exists(backup_filename):
+            print(f"The file {args.zipfile} already exists")
+            exit()
+    else:
+        fecha_hora_actual = datetime.datetime.now(
+            pytz.timezone("America/Argentina/Buenos_Aires")
+        )
+        zipfile = fecha_hora_actual.strftime("bkp_%Y-%m-%d_%H-%M-%S_GMT-3.zip")
+
+    print(f"The new backup file is {zipfile}")
+    return f"{args.base}/backup_dir/{zipfile}"
 
 
 def get_backup_filename(args):
@@ -57,7 +76,7 @@ def deflate_zip(args, backup_filename, tempdir):
         # Extract the database dump to the temporary directory
         zip_ref.extract(member="dump.sql", path=tempdir)
 
-    # fix the filestore owner
+    # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
     # uinfo = pwd.getpwnam("systemd-resolve")
     # ginfo = grp.getgrnam("systemd-journal")
@@ -114,6 +133,7 @@ def do_restore_database(args, backup_filename):
 
 
 def neutralize_database(args, cur):
+    """Esto no funciona hay que rehacerlo"""
     print("neutralizando base de datos")
     with open("neutralize.sql") as _f:
         sql = _f.read()
@@ -122,12 +142,45 @@ def neutralize_database(args, cur):
 
 
 def backup_database(args):
-    print("Not Implemented")
+    """Para hacer un backup necesitamos saber si lo vamos a neutralizar si no esta
+    el parámetro --no-neutralize entonces se hace la neutralizacion"""
+
+    if not args.no_neutralize:
+        print("The neutralization is Not implemented")
+        exit()
+
+    if not args.db_name:
+        print("Missing --db-name argument")
+
+    # Obtener el nombre del restore
+    backup_filename = get_restore_filename(args)
+    print(f"Backup {args.db_name} into file {backup_filename}")
+
+    # Crear un temp donde armar el backup
+    with tempfile.TemporaryDirectory() as tempdir:
+        # copiar el filestore a tempdir
+        shutil.copytree(f"{args.base}/data_dir/filestore", f"{tempdir}/filestore")
+        os.environ["PGPASSWORD"] = "odoo"
+        # Crear el dump
+        try:
+            cmd = [
+                "pg_dump",
+                f"--dbname={args.db_name}",
+                f"--host=db",
+                "--username=odoo",
+                f"--file={tempdir}/dump.slq",
+                "--no-owner",
+            ]
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"error en backup {e}")
+            exit()
+
+        # zipear y mover al archivo destino
+        shutil.make_archive(backup_filename, "zip", tempdir)
 
 
 def restore_database(args):
-    """Restaurar la base de datos"""
-
     if not args.db_name:
         print("Missing --db-name argument")
 
@@ -166,7 +219,7 @@ if __name__ == "__main__":
     arg_parser.add_argument(
         "--base",
         default="/base",
-        help="Proyect dir",
+        help="Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)",
     )
     arg_parser.add_argument(
         "--db_name",
@@ -174,7 +227,9 @@ if __name__ == "__main__":
     )
     arg_parser.add_argument(
         "--zipfile",
-        help="Zip file with odoo database in odoo format",
+        help="The backup filename.\n"
+        "On restore, defaults to the last backup file. "
+        "On backup, defaults to a filename with a timestamp",
     )
     arg_parser.add_argument(
         "--restore",
@@ -192,11 +247,15 @@ if __name__ == "__main__":
         help="Make an exact database (no neutralize)",
     )
     args = arg_parser.parse_args()
+    if args.restore and args.backup:
+        print("Yu must issue a backup or a restore command")
+        exit()
 
-    print("Restore Database V1.4.0")
+    print("Database utils V1.4.0")
     print()
 
     if args.restore:
         restore_database(args)
     if args.backup:
         backup_database(args)
+        print("database backed up")

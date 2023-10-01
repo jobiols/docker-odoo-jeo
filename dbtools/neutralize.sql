@@ -1,4 +1,4 @@
--- Script para neutralizar base de datos, si es EE la vuelve trial con un mes de uso.
+-- Esto era lo que haciamos antes ya no sirve
 
 -- desactivar tareas cron
 -- UPDATE ir_cron SET active = FALSE;
