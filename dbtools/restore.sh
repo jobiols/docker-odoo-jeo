@@ -65,7 +65,7 @@ if [[ -z "$DEACTIVATE" ]]
 then
     echo "RESTORE FIHISHED FOR ${NEW_DBNAME} WARNING, DATABASE IS --NOT-- DEACTIVATED"
 else
-    psql -U odoo -h db -d ${NEW_DBNAME} -q < /deactivate.sql
+    psql -U odoo -h db -d ${NEW_DBNAME} -q < /neutralize.sql
     echo "RESTORE FIHISHED DATABASE ${NEW_DBNAME} IS DEACTIVATED"
 fi
 

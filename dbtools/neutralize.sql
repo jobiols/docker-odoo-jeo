@@ -1,7 +1,7 @@
--- Script para desactivar base de datos, si es EE la vuelve trial con un mes de uso.
+-- Script para neutralizar base de datos, si es EE la vuelve trial con un mes de uso.
 
 -- desactivar tareas cron
-UPDATE ir_cron SET active = FALSE;
+-- UPDATE ir_cron SET active = FALSE;
 
 -- eliminar servidores de correo
 DELETE FROM fetchmail_server;
@@ -18,3 +18,5 @@ WHERE
 UPDATE res_users
 SET login = 'admin', password = 'admin'
 WHERE id = 2;
+
+-- end of neutralization

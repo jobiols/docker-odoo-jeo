@@ -29,7 +29,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 
 ADD dbtools.py /dbtools.py
 ADD extend.sh /usr/bin/extend.sh
-ADD deactivate.sql /
+ADD neutralize.sql /
 ADD extend.sql /
 
 ENTRYPOINT ["/dbtools.py"]
