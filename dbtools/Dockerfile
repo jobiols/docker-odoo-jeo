@@ -23,14 +23,13 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
     && gpgconf --kill all \
     && rm -rf "$GNUPGHOME" \
     && apt-get update  \
-    && apt-get install --no-install-recommends -y postgresql-client-15 \
+    && apt-get install --no-install-recommends -y postgresql-client \
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install pytz
 
 ADD dbtools.py /dbtools.py
-ADD extend.sh /usr/bin/extend.sh
 ADD neutralize.sql /
 ADD extend.sql /
 

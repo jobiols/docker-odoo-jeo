@@ -186,6 +186,23 @@ def backup_database(args):
         # zipear y mover al archivo destino
         shutil.make_archive(backup_filename, "zip", tempdir)
 
+def cleanup_backup_files(args):
+    "Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"
+
+    # sin el parametro termina
+    if not args.days_to_keep:
+        return
+
+    actual_date = datetime.now()
+    max_age = datetime.timedelta(days=args.days_to_keep)
+    backup_dir = f"{args.base}/backup_dir/"
+    for file in os.listdir(backup_dir):
+        filepath = os.path.join(backup_dir, file)
+        if os.path.isfile(filepath):
+            file_date = datetime.fromtimestamp(os.path.getmtime(filepath))
+            file_age = actual_date - file_date
+            if file_age > max_age:
+                os.remove(filepath)
 
 def restore_database(args):
     if not args.db_name:
@@ -239,6 +256,10 @@ if __name__ == "__main__":
         "On backup, defaults to a filename with a timestamp",
     )
     arg_parser.add_argument(
+        "--days-to-keep",
+        help="Number of days to keep backups"
+    )
+    arg_parser.add_argument(
         "--restore",
         action="store_true",
         help="Restore database",
@@ -265,4 +286,5 @@ if __name__ == "__main__":
         restore_database(args)
     if args.backup:
         backup_database(args)
+        cleanup_backup_files(args)
         print("database backed up")
