@@ -175,7 +175,7 @@ def backup_database(args):
                 f"--dbname={args.db_name}",
                 f"--host=db",
                 "--username=odoo",
-                f"--file={tempdir}/dump.slq",
+                f"--file={tempdir}/dump.sql",
                 "--no-owner",
             ]
             subprocess.run(cmd, check=True)
