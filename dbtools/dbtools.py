@@ -194,12 +194,12 @@ def cleanup_backup_files(args):
         return
 
     actual_date = datetime.datetime.now()
-    max_age = datetime.timedelta(days=args.days_to_keep)
-    backup_dir = f"{args.base}/backup_dir/"
+    max_age = datetime.timedelta(days=int(args.days_to_keep))
+    backup_dir = f"{args.base}/backup_dir"
     for file in os.listdir(backup_dir):
         filepath = os.path.join(backup_dir, file)
         if os.path.isfile(filepath):
-            file_date = datetime.fromtimestamp(os.path.getmtime(filepath))
+            file_date = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
             file_age = actual_date - file_date
             if file_age > max_age:
                 os.remove(filepath)
