@@ -17,7 +17,13 @@ import pytz
 
 
 def get_restore_filename(args):
-    """Obtener el nombre del archivo hacia el cual backupear"""
+    """ Obtener el nombre del archivo hacia el cual backupear
+        El nombre del archivo para salvar el backup se obtiene del parametro
+        args.zipfile.
+        Si el archivo ya existe se termina con error.
+        Si no se especificó el nombre del archivo, se crea un nombre con la fecha
+        y la hora en GMT-3
+    """
     if args.zipfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
         # Verificar si el archivo existe y terminar con error
@@ -25,17 +31,22 @@ def get_restore_filename(args):
             print(f"The file {args.zipfile} already exists")
             exit()
     else:
-        fecha_hora_actual = datetime.datetime.now(
+        fecha_hora_local = datetime.datetime.now(
             pytz.timezone("America/Argentina/Buenos_Aires")
         )
-        zipfile = fecha_hora_actual.strftime("bkp_%Y-%m-%d_%H-%M-%S_GMT-3.zip")
+        zipfile = fecha_hora_local.strftime("bkp_%Y-%m-%d_%H-%M-%S_GMT-3")
 
     print(f"The new backup file is {zipfile}")
     return f"{args.base}/backup_dir/{zipfile}"
 
 
 def get_backup_filename(args):
-    """Obtener nombre del backup a restaurar"""
+    """ Obtener nombre del backup a restaurar
+        El nombre del backup a restaurar viene en args.zipfile
+        si el argumento viene vacío entonces se obtiene el nombre del último backup
+        que se hizo.
+        Finalmente si no hay ningún backup termina con error
+    """
 
     if args.zipfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
@@ -133,12 +144,8 @@ def do_restore_database(args, backup_filename):
 
 
 def neutralize_database(args, cur):
-    """Esto no funciona hay que rehacerlo"""
-    print("neutralizando base de datos")
-    with open("neutralize.sql") as _f:
-        sql = _f.read()
-    print(sql)
-    cur.execute(sql)
+    """Neutralizar base de datos"""
+    pass
 
 
 def backup_database(args):

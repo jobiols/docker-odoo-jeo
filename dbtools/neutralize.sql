@@ -1,22 +1,11 @@
--- Esto era lo que haciamos antes ya no sirve
+--Neutralizar la base de datos
 
--- desactivar tareas cron
--- UPDATE ir_cron SET active = FALSE;
+con esto se puede obtener los archivos sql de la neutralizacion
+sudo docker exec -it odoo find -name neutralize.sql
 
--- eliminar servidores de correo
-DELETE FROM fetchmail_server;
-DELETE FROM ir_mail_server;
 
--- desactivar licencia
-DELETE FROM ir_config_parameter
+SELECT name
+FROM
+  ir_module_module
 WHERE
-  key  = 'database.enterprise_code' or
-  key = 'database.expiration_date' or
-  key = 'database.expiration_reason';
-
--- cambiar la contraseña de admin
-UPDATE res_users
-SET login = 'admin', password = 'admin'
-WHERE id = 2;
-
--- end of neutralization
+  state IN ('installed', 'to upgrade', 'to remove');
