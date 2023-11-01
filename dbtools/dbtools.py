@@ -166,7 +166,7 @@ def backup_database(args):
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
         # copiar el filestore a tempdir
-        shutil.copytree(f"{args.base}/data_dir/filestore", f"{tempdir}/filestore")
+        shutil.copytree(f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore")
         os.environ["PGPASSWORD"] = "odoo"
         # Crear el dump
         try:
