@@ -75,17 +75,17 @@ def deflate_zip(args, backup_filename, tempdir):
 
     # Open the ZIP file
     with ZipFile(backup_filename, "r") as zip_ref:
-        print("Restoring filestore")
-        # Iterate over all the files in the ZIP
-        for file in zip_ref.namelist():
-            # Check if the file is in the filestore folder
-            if file.startswith("filestore"):
-                # Extract the file to the filestore folder
-                zip_ref.extract(member=file, path=filestorepath)
 
-        print("extracting dump")
-        # Extract the database dump to the temporary directory
-        zip_ref.extract(member="dump.sql", path=tempdir)
+        # Extraer todo el zip al temporario
+        with ZipFile(backup_filename, "r") as zip_ref:
+            zip_ref.extractall(path=tempdir)
+
+        # copiar el filestore al destino
+        shutil.copytree(tempdir+'/filestore', filestorepath)
+
+        # remover lo que sobra del destino
+        shutil.rmtree(filestorepath + 'filestore')
+        os.remove(filestorepath + 'dump.sql')
 
     # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
