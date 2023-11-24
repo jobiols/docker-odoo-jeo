@@ -1,5 +1,5 @@
 FROM ubuntu:jammy AS base-image
-maintainer="Odoo S.A. <info@odoo.com>"
+LABEL maintainer="Odoo S.A. <info@odoo.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -71,7 +71,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 17.0
-ENV ODOO_RELEASE=20231117
+ENV ODOO_RELEASE=20231124
 #ARG ODOO_SHA=b72a32e3356084adb637334b45b110cdedc8ab0c
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -110,6 +110,9 @@ FROM base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
+
+# instalar OWL
+#RUN npm install -g @odoo/owl # --prefix .
 
 ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
