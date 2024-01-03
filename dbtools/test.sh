@@ -12,4 +12,4 @@ echo
 sudo docker run --rm -i \
     --link pg-bukito:db \
     -v /odoo/ar/odoo-16.0e/bukito:/base \
-    jobiols/dbtools:1.4.0 --db_name bukito_prod --backup 
+    jobiols/dbtools:1.4.0 --db_name bukito_prod --backup

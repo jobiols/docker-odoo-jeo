@@ -123,29 +123,76 @@ def create_database(args, cur):
 
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
+    import requests
+    import io
+    from werkzeug.datastructures import FileStorage
 
-    with tempfile.TemporaryDirectory() as tempdir:
-        # Extraer el Filestore al filestore de la estructura y el backup al temp dir
-        dump_filename = deflate_zip(args, backup_filename, tempdir)
-        with open(dump_filename, "r") as d_filename:
-            # Run psql command as a subprocess, and specify that the dump file should
-            # be passed as standard input to the psql process
-            os.environ["PGPASSWORD"] = "odoo"
-            print("Restoring Database")
-            process = subprocess.run(
-                ["psql", "-U", "odoo", "-h", "db", "-d", "%s" % args.db_name],
-                stdout=subprocess.PIPE,
-                stdin=d_filename,
-            )
+    # <class 'werkzeug.datastructures.FileStorage'>
+    odoo_container = 'lopez'
+    print('do_restore_database ---------------------------------', backup_filename)
 
-        if int(process.returncode) != 0:
-            print(f"The restored proces end with error {process.returncode}")
-            exit(1)
+    with open(backup_filename, 'rb') as file:
+        backup = file.read()
+    backup_file = FileStorage(stream=io.BytesIO(backup), filename=backup_filename, content_type='application/zip')
+
+    print('se leyo el archivo de backup')
+
+    url = f"http://{odoo_container}:8069/web/database/restore"
+    master_pwd = 'lopez-23'
+    db_name = 'lopez_test_0102'
+    neutralize_database = 'on'
+
+    data = {
+        'master_pwd': master_pwd,
+        'backup_file': backup_file,
+        'name': db_name,
+        'copy': 'false',
+        'neutralize_database': neutralize_database,
+    }
+    import json
+    try:
+        answer = requests.post(url, data=json.dumps(data))
+    except Exception as ex:
+        print('No se puede enviar post odoo ',str(ex))
+        exit()
+    if answer.status_code != 200:
+        print('>>>>>>>>>>',answer,answer.text)
+        exit()
+
+    print('respuesta sin error -------------------',answer)
+    exit()
+    # with tempfile.TemporaryDirectory() as tempdir:
+    #     # Extraer el Filestore al filestore de la estructura y el backup al temp dir
+    #     dump_filename = deflate_zip(args, backup_filename, tempdir)
+    #     with open(dump_filename, "r") as d_filename:
+    #         # Run psql command as a subprocess, and specify that the dump file should
+    #         # be passed as standard input to the psql process
+    #         os.environ["PGPASSWORD"] = "odoo"
+    #         print("Restoring Database")
+    #         process = subprocess.run(
+    #             ["psql", "-U", "odoo", "-h", "db", "-d", "%s" % args.db_name],
+    #             stdout=subprocess.PIPE,
+    #             stdin=d_filename,
+    #         )
+
+    #     if int(process.returncode) != 0:
+    #         print(f"The restored proces end with error {process.returncode}")
+    #         exit(1)
 
 
 def neutralize_database(args, cur):
-    """Neutralizar base de datos"""
-    pass
+    """Neutralizar base de datos luego de hacer el restore"""
+
+    #obtener todos los archivos neutralize.sql
+    # sudo docker exec -it odoo find -name neutralize.sql
+
+    sql = """
+
+    """
+
+    cur.execute(sql)
+
+
 
 
 def backup_database(args):
@@ -208,18 +255,23 @@ def restore_database(args):
     if not args.db_name:
         print("Missing --db-name argument")
 
+    try:
+        # Crear conexion a la base de datos
+        conn = psycopg2.connect(
+            user="odoo",
+            host="db",
+            port=5432,
+            password="odoo",
+            dbname="postgres",
+        )
+    except Exception as ex:
+        print('No se puede conectar a la BD esta el contenedor levantado?',str(ex))
+        exit()
+
     # Obtener el nombre del backup
     backup_filename = get_backup_filename(args)
     print(f"Restoring {backup_filename} into Database {args.db_name}")
 
-    # Crear conexion a la base de datos
-    conn = psycopg2.connect(
-        user="odoo",
-        host="db",
-        port=5432,
-        password="odoo",
-        dbname="postgres",
-    )
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
 
@@ -228,10 +280,13 @@ def restore_database(args):
     create_database(args, cur)
     do_restore_database(args, backup_filename)
 
+    rojo = "\033[91m"
+    resetear_color = "\033[0m"
+
     if args.no_neutralize:
         print(
-            f"RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-            "WARNING - DATABASE IS NOT NEUTRALIZED - WARNING"
+            f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
+            f"WARNING - DATABASE IS NOT NEUTRALIZED - WARNING {resetear_color}"
         )
     else:
         neutralize_database(args, cur)
