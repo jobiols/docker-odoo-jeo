@@ -118,7 +118,6 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential
 
-# Quitamos esto porque falla y la verdad nadie lo usa
 #RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 
 # requisitos para M2Crypto
@@ -142,5 +141,8 @@ RUN chmod -R o+w /usr/local/lib/python3.7/dist-packages/pyafipws
 # bajar el cifrado del cliente para evitar el error DH_KEY_TOO_SMALL
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
+
+# Hacer el parche para que no cheque password
+RUN sed -i  "s/raise AccessDenied()/pass/" /usr/lib/python3/dist-packages/odoo/addons/base/models/res_users.py
 
 USER odoo
