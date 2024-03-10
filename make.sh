@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
 # Script par hacer Build de las imagenes community
-set -e
 
 # limpiar las copias de debug
 cd /odoo/ar/odoo-14.0/
