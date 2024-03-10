@@ -71,8 +71,8 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 17.0
-ENV ODOO_RELEASE=20240223
-#ARG ODOO_SHA=b72a32e3356084adb637334b45b110cdedc8ab0c
+ARG ODOO_RELEASE=20240310
+#ARG ODOO_SHA=e6baad4c22936a3913e51e4ddfd40b47c59fd9d4
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
@@ -102,6 +102,7 @@ USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["odoo"]
+
 ###############################################################################
 ############################ Fin de base image ################################
 ###############################################################################

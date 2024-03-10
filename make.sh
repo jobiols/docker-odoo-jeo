@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
 #
 # Script par hacer Build de las imagenes community
+set -e
 
 # limpiar las copias de debug
-cd /odoo/ar/odoo-13.0/
-sudo rm -r dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-14.0/
-sudo rm -r dist-local-packages dist-packages extra-addons
+sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-15.0/
-sudo rm -r dist-local-packages dist-packages extra-addons
+sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-16.0/
-sudo rm -r dist-local-packages dist-packages extra-addons
+sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-17.0/
-sudo rm -r dist-local-packages dist-packages extra-addons
+sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-18.0/
-sudo rm -r dist-local-packages dist-packages extra-addons
+sudo rm -rf dist-local-packages dist-packages extra-addons
 
 CD="/mnt/old_so/home/jobiols/git-repos/docker-odoo-jeo/jeo"
+
+set -e
 
 versions=( 14.0 15.0 16.0 17.0 18.0 )
 
