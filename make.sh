@@ -2,6 +2,7 @@
 #
 # Script par hacer Build de las imagenes community
 
+
 # limpiar las copias de debug
 cd /odoo/ar/odoo-14.0/
 sudo rm -rf dist-local-packages dist-packages extra-addons
