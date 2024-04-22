@@ -4,6 +4,8 @@
 
 
 # limpiar las copias de debug
+cd /odoo/ar/odoo-13.0/
+sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-14.0/
 sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-15.0/
