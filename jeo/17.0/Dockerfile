@@ -1,5 +1,5 @@
 FROM ubuntu:jammy AS base-image
-LABEL maintainer="Odoo S.A. <info@odoo.com>"
+MAINTAINER Odoo S.A. <info@odoo.com>
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -139,3 +139,10 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential
 
 USER odoo
+
+COPY ./requirements /req
+RUN pip3 install -r /req/odoo-argentina.txt
+RUN rm -r /req
+
+# No se puede instalar M2Crypto
+#     && pip3 install -r /req/odoo-argentina-ee.txt \
