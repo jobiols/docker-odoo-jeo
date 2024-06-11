@@ -71,7 +71,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 17.0
-ARG ODOO_RELEASE=20240527
+ARG ODOO_RELEASE=20240611
 #ARG ODOO_SHA=e6baad4c22936a3913e51e4ddfd40b47c59fd9d4
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -112,9 +112,6 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
-# instalar OWL
-#RUN npm install -g @odoo/owl # --prefix .
-
 ENV ETC_DIR /opt/odoo/etc
 ENV DATA_DIR /opt/odoo/data
 ENV LOG_DIR /var/log/odoo
@@ -138,11 +135,11 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential
 
-USER odoo
-
 COPY ./requirements /req
 RUN pip3 install -r /req/odoo-argentina.txt
 RUN rm -r /req
 
-# No se puede instalar M2Crypto
-#     && pip3 install -r /req/odoo-argentina-ee.txt \
+# No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
+# hay que armar la enterprise de cero...
+
+USER odoo
