@@ -1,7 +1,4 @@
 httplib2==0.20.4
-PyAfipWs @ git+https://github.com/ingadhoc/pyafipws@227b57d69659e81a229da235f051071d446ce4f1
-PySimpleSOAP @ git+https://github.com/pysimplesoap/pysimplesoap@a330d9c4af1b007fe1436f979ff0b9f66613136e
-openupgradelib @ git+https://github.com/OCA/openupgradelib/@f45dcfe2a3e9661a4104298e9358dedb8aa65b2f
-
-# requerido por l10n_ar_edi
-pyOpenSSL==19.0.0
+git+https://github.com/pysimplesoap/pysimplesoap@a330d9c4af1b007fe1436f979ff0b9f66613136e
+git+https://github.com/ingadhoc/pyafipws@py3k
+git+https://github.com/OCA/openupgradelib/@master
