@@ -1,19 +1,19 @@
-Imagen docker con las herramientas de postgres para restaurar un backup
+Docker image with posgres tools to manage backup and restore
 
-uso:
+    sudo docker run --rm -i \
+        --link postgres_image:db \
+        -v base_path:/base \
+        jobiols/dbtools:1.4.0 \
+            --db_name bukito_prod \
+            --backup
 
-sudo docker run --rm -i \
-    --link postgres_image:db \
-    -v path_al_filestore:/filestore \
-    -v path_al_backup/:/backup \
-    --env NEW_DBNAME=database_name \
-    --env ZIPFILE=backup_a_restaurar \
-    --env DEACTIVATE=True \
-    jobiols/dbtools
-
-- postgres_image: nombre de la imagen donde esta el servidor postgres
-- path_al_filestore: ubicacion del filestore a restaurar
-- path_al_backup: ubicacion del archivo de backup a restaurar
-- NEW_DBNAME: nombre de la base a restaurar, si existe la borra, si esta abierta por otras aplicaciones mata las conexiones
-- ZIPFILE: nombre del bakcup a restaurar, si no esta, se trae el mas nuevo
-- DEACTIVATE = True corre el script de desactivacion, si no esta (no vale ponerlo en false, no tiene que estar), no la desactiva
+    optional arguments:
+    -h, --help         show this help message and exit
+    --base BASE        Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)
+    --db_name DB_NAME  Database name to restore into or tu backup from
+    --zipfile ZIPFILE  The backup filename. On restore, defaults to the last
+                        backup file. On backup, defaults to a filename with a
+                        timestamp
+    --restore          Restore database
+    --backup           Backup database
+    --no-neutralize    Make an exact database (no neutralize)

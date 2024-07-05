@@ -16,4 +16,6 @@ RUN sed -i  "s/raise AccessDenied()/pass/" /usr/lib/python3/dist-packages/odoo/a
 # Correr un demonio para atrapar los mails.
 RUN python3 -m smtpd -n -c DebuggingServer localhost:2500 >  /var/log/odoo/maillog.txt &
 
+RUN apt install procps -y
+
 USER odoo

@@ -1,0 +1,4 @@
+mercadopago==2.0.6
+suds==1.0.0
+pandas
+zxcvbn

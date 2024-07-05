@@ -54,7 +54,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 13.0
-ARG ODOO_RELEASE=20220927
+ENV ODOO_RELEASE=latest
 #ARG ODOO_SHA=6bfc680c42e4fd310281712c3467902d8db8cb56
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #        && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -118,7 +118,8 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential
 
-RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
+# Quitamos esto porque falla y la verdad nadie lo usa
+#RUN pip3 install git+https://github.com/OCA/openupgradelib/@master
 
 # requisitos para M2Crypto
 #RUN apt-get update -qq
