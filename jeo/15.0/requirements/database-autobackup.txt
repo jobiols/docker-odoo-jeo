@@ -1,3 +1,6 @@
 # generated from manifests external_dependencies
 pysftp
-cryptography==42.0.4
+#cryptography==42.0.4 Dependabot dice que la 37 tiene vulnerabilidades pero si lo
+# pongo la 42.04 falla
+cryptography==37.0.0
+
