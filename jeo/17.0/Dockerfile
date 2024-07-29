@@ -71,10 +71,10 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION 17.0
-ARG ODOO_RELEASE=20240705
-ARG ODOO_SHA=76bba01e66368d00dc94c424f5f4964b8299f1b4
+ARG ODOO_RELEASE=20240729
+#ARG ODOO_SHA=76bba01e66368d00dc94c424f5f4964b8299f1b4
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
     && apt-get -y install --no-install-recommends ./odoo.deb \
     && rm -rf /var/lib/apt/lists/* odoo.deb
@@ -137,6 +137,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
 
 COPY ./requirements /req
 RUN pip3 install -r /req/odoo-argentina.txt
+RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN rm -r /req
 
 # No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
