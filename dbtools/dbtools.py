@@ -17,12 +17,12 @@ import pytz
 
 
 def get_restore_filename(args):
-    """ Obtener el nombre del archivo hacia el cual backupear
-        El nombre del archivo para salvar el backup se obtiene del parametro
-        args.zipfile.
-        Si el archivo ya existe se termina con error.
-        Si no se especificó el nombre del archivo, se crea un nombre con la fecha
-        y la hora en GMT-3
+    """Obtener el nombre del archivo hacia el cual backupear
+    El nombre del archivo para salvar el backup se obtiene del parametro
+    args.zipfile.
+    Si el archivo ya existe se termina con error.
+    Si no se especificó el nombre del archivo, se crea un nombre con la fecha
+    y la hora en GMT-3
     """
     if args.backupfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
@@ -38,11 +38,11 @@ def get_restore_filename(args):
 
 
 def get_backup_filename(args):
-    """ Obtener nombre del backup a restaurar
-        El nombre del backup a restaurar viene en args.zipfile
-        si el argumento viene vacío entonces se obtiene el nombre del último backup
-        que se hizo.
-        Finalmente si no hay ningún backup termina con error
+    """Obtener nombre del backup a restaurar
+    El nombre del backup a restaurar viene en args.zipfile
+    si el argumento viene vacío entonces se obtiene el nombre del último backup
+    que se hizo.
+    Finalmente si no hay ningún backup termina con error
     """
 
     if args.backupfile:
@@ -78,11 +78,11 @@ def deflate_zip(args, backup_filename, tempdir):
             zip_ref.extractall(path=tempdir)
 
         # copiar el filestore al destino
-        shutil.copytree(tempdir+'/filestore', filestorepath)
+        shutil.copytree(tempdir + "/filestore", filestorepath)
 
         # remover lo que sobra del destino
-        shutil.rmtree(filestorepath + 'filestore')
-        os.remove(filestorepath + 'dump.sql')
+        shutil.rmtree(filestorepath + "filestore")
+        os.remove(filestorepath + "dump.sql")
 
     # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
@@ -125,50 +125,55 @@ def do_restore_database(args, backup_filename):
     from werkzeug.datastructures import FileStorage
 
     # Obtener datos del proyecto
-    with open(args.project+'/__manifest__.py','r') as proy:
+    with open(args.project + "/__manifest__.py", "r") as proy:
         manifest_content = proy.read()
 
     manifest_dict = ast.literal_eval(manifest_content)
 
     # Leer el proyecto
-    odoo_container = manifest_dict.get('name')
-    config = manifest_dict.get('config')
+    odoo_container = manifest_dict.get("name")
+    config = manifest_dict.get("config")
     admin_passwd = False
     for item in config:
-        if item.startswith('admin_passwd'):
-            _, admin_passwd = item.split('=', 1)
+        if item.startswith("admin_passwd"):
+            _, admin_passwd = item.split("=", 1)
 
-    print('do_restore_database ---------------------------------', backup_filename)
+    print("do_restore_database ---------------------------------", backup_filename)
 
-    with open(backup_filename, 'rb') as file:
+    with open(backup_filename, "rb") as file:
         backup = file.read()
-    backup_file = FileStorage(stream=io.BytesIO(backup), filename=backup_filename, content_type='application/zip')
+    backup_file = FileStorage(
+        stream=io.BytesIO(backup),
+        filename=backup_filename,
+        content_type="application/zip",
+    )
 
-    print('se leyo el archivo de backup')
+    print("se leyo el archivo de backup")
 
     url = f"http://{odoo_container}:8069/web/database/restore"
     master_pwd = admin_passwd.strip()
     db_name = args.backupfile
-    neutralize_database = 'on' if args.no_neutralize else 'off'
+    neutralize_database = "on" if args.no_neutralize else "off"
 
     data = {
-        'master_pwd': master_pwd,
-        'backup_file': backup_file,
-        'name': db_name,
-        'copy': 'false',
-        'neutralize_database': neutralize_database,
+        "master_pwd": master_pwd,
+        "backup_file": backup_file,
+        "name": db_name,
+        "copy": "false",
+        "neutralize_database": neutralize_database,
     }
     import json
+
     try:
         answer = requests.post(url, data=json.dumps(data))
     except Exception as ex:
-        print('No se puede enviar post odoo ',str(ex))
+        print("No se puede enviar post odoo ", str(ex))
         exit()
     if answer.status_code != 200:
-        print('>>>>>>>>>>',answer,answer.text)
+        print(">>>>>>>>>>", answer, answer.text)
         exit()
 
-    print('respuesta sin error -------------------',answer)
+    print("respuesta sin error -------------------", answer)
     exit()
     # with tempfile.TemporaryDirectory() as tempdir:
     #     # Extraer el Filestore al filestore de la estructura y el backup al temp dir
@@ -192,7 +197,7 @@ def do_restore_database(args, backup_filename):
 def neutralize_database(args, cur):
     """Neutralizar base de datos luego de hacer el restore"""
 
-    #obtener todos los archivos neutralize.sql
+    # obtener todos los archivos neutralize.sql
     # sudo docker exec -it odoo find -name neutralize.sql
 
     sql = """
@@ -222,7 +227,9 @@ def backup_database(args):
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
         # copiar el filestore a tempdir
-        shutil.copytree(f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore")
+        shutil.copytree(
+            f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore"
+        )
         os.environ["PGPASSWORD"] = "odoo"
         # Crear el dump
         try:
@@ -242,6 +249,7 @@ def backup_database(args):
         # zipear y mover al archivo destino
         shutil.make_archive(backup_filename, "zip", tempdir)
 
+
 def cleanup_backup_files(args):
     "Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"
 
@@ -259,6 +267,7 @@ def cleanup_backup_files(args):
             file_age = actual_date - file_date
             if file_age > max_age:
                 os.remove(filepath)
+
 
 def restore_database(args):
     if not args.db_name:
@@ -324,7 +333,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--days-to-keep",
         default=2,
-        help="Number of days to keep backups also called retention days"
+        help="Number of days to keep backups also called retention days",
     )
     group.add_argument(
         "--restore",
