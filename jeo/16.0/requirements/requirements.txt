@@ -1,3 +1,10 @@
 num2words==0.5.10
-pandas==2.0.1
+
+pandas==2.2.2
 paramiko==3.1.0
+astor
+
+# LOPEZ hr_attendance_zktecho
+pyzk
+# LOPEZ izi_data
+sqlparse
