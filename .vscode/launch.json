@@ -6,12 +6,12 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--db_name", "lopez_prod", "--base","/odoo/ar/odoo-16.0e/lopez", "--no-neutralize", "--days-to-keep","1", "--backup"],
+            "args": ["--restore","--db-name","bukito_prod","--base","/odoo/ar/odoo-16.0e/bukito","--project","/odoo/ar/odoo-16.0e/bukito/sources/cl-bukito/bukito_default"],
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         }
     ]
 }

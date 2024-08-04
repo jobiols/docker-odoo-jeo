@@ -1,37 +1,33 @@
-FROM debian:bullseye-slim
-LABEL maintainer Jorge Obiols <jorge.obiols@gmail.com>
+# Start from debian 12 Bookworm
+#FROM debian:bookworm-slim
+FROM python:3.11-slim
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
-RUN apt-get update \
-        && apt-get install -y --no-install-recommends \
-            ca-certificates \
-            dirmngr \
-            fonts-noto-cjk \
-            gnupg \
-            python3-pip \
-            zip \
-            unzip
+# Configurar el entorno para no interactuar con la instalación
+#ENV DEBIAN_FRONTEND=noninteractive
 
-    RUN pip install psycopg2-binary
-
-# install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-    && GNUPGHOME="$(mktemp -d)" \
-    && export GNUPGHOME \
-    && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-    && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-    && gpgconf --kill all \
-    && rm -rf "$GNUPGHOME" \
-    && apt-get update  \
-    && apt-get install --no-install-recommends -y postgresql-client \
-    && rm -f /etc/apt/sources.list.d/pgdg.list \
+# Instalar dependencias necesarias
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    gnupg2 \
+    lsb-release \
+#    python3 python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install pytz requests
-RUN pip install Werkzeug
+# Agregar el repositorio de PostgreSQL y su clave
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+# Instalar el cliente de PostgreSQL
+RUN apt-get update && apt-get install -y postgresql-client-15 \
+    && rm -rf /var/lib/apt/lists/*
+
+#RUN pip install pytz requests
+#RUN pip install Werkzeug
+RUN pip3 install psycopg2-binary pytz
 
 ADD dbtools.py /dbtools.py
-ADD neutralize.sql /
-ADD extend.sql /
+#ADD neutralize.sql /
+#ADD extend.sql /
 
 ENTRYPOINT ["/dbtools.py"]

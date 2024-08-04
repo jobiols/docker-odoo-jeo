@@ -24,19 +24,16 @@ def get_restore_filename(args):
         Si no se especificó el nombre del archivo, se crea un nombre con la fecha
         y la hora en GMT-3
     """
-    if args.zipfile:
+    if args.backupfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
         # Verificar si el archivo existe y terminar con error
         if os.path.exists(backup_filename):
             print(f"The file {args.zipfile} already exists")
             exit()
     else:
-        fecha_hora_local = datetime.datetime.now(
-            pytz.timezone("America/Argentina/Buenos_Aires")
-        )
-        zipfile = fecha_hora_local.strftime("bkp_%Y-%m-%d_%H-%M-%S_GMT-3")
+        dt = datetime.datetime.now()
+        zipfile = dt.strftime("bkp_%Y-%m-%d_%H-%M-%S")
 
-    print(f"The new backup file is {zipfile}")
     return f"{args.base}/backup_dir/{zipfile}"
 
 
@@ -48,12 +45,12 @@ def get_backup_filename(args):
         Finalmente si no hay ningún backup termina con error
     """
 
-    if args.zipfile:
+    if args.backupfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
         print("The selected backup is " + backup_filename)
         return backup_filename
     else:
-        files = glob.glob("%s/backup_dir/*.zip" % args.base)
+        files = glob.glob(f"{args.base}/backup_dir/*.zip")
         if files:
             backup_filename = max(files, key=os.path.getctime)
             print(f"Choosing the latest backup {os.path.basename(backup_filename)}")
@@ -124,11 +121,23 @@ def create_database(args, cur):
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
     import requests
-    import io
+    import io, ast
     from werkzeug.datastructures import FileStorage
 
-    # <class 'werkzeug.datastructures.FileStorage'>
-    odoo_container = 'lopez'
+    # Obtener datos del proyecto
+    with open(args.project+'/__manifest__.py','r') as proy:
+        manifest_content = proy.read()
+
+    manifest_dict = ast.literal_eval(manifest_content)
+
+    # Leer el proyecto
+    odoo_container = manifest_dict.get('name')
+    config = manifest_dict.get('config')
+    admin_passwd = False
+    for item in config:
+        if item.startswith('admin_passwd'):
+            _, admin_passwd = item.split('=', 1)
+
     print('do_restore_database ---------------------------------', backup_filename)
 
     with open(backup_filename, 'rb') as file:
@@ -138,9 +147,9 @@ def do_restore_database(args, backup_filename):
     print('se leyo el archivo de backup')
 
     url = f"http://{odoo_container}:8069/web/database/restore"
-    master_pwd = 'lopez-23'
-    db_name = 'lopez_test_0102'
-    neutralize_database = 'on'
+    master_pwd = admin_passwd.strip()
+    db_name = args.backupfile
+    neutralize_database = 'on' if args.no_neutralize else 'off'
 
     data = {
         'master_pwd': master_pwd,
@@ -193,8 +202,6 @@ def neutralize_database(args, cur):
     cur.execute(sql)
 
 
-
-
 def backup_database(args):
     """Para hacer un backup necesitamos saber si lo vamos a neutralizar si no esta
     el parámetro --no-neutralize entonces se hace la neutralizacion"""
@@ -202,6 +209,8 @@ def backup_database(args):
     if not args.no_neutralize:
         print("The neutralization is Not implemented")
         exit()
+    else:
+        print("The database is not neutralized")
 
     if not args.db_name:
         print("Missing --db-name argument")
@@ -259,13 +268,13 @@ def restore_database(args):
         # Crear conexion a la base de datos
         conn = psycopg2.connect(
             user="odoo",
-            host="db",
+            host="localhost",
             port=5432,
             password="odoo",
             dbname="postgres",
         )
     except Exception as ex:
-        print('No se puede conectar a la BD esta el contenedor levantado?',str(ex))
+        print(str(ex.args[0]))
         exit()
 
     # Obtener el nombre del backup
@@ -294,47 +303,52 @@ def restore_database(args):
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    parser.add_argument(
         "--base",
         default="/base",
         help="Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)",
     )
-    arg_parser.add_argument(
-        "--db_name",
-        help="Database name to restore into or tu backup from",
+    parser.add_argument(
+        "--db-name",
+        help="Name of the database to restore to or to back up from",
     )
-    arg_parser.add_argument(
-        "--zipfile",
+    parser.add_argument(
+        "--backupfile",
         help="The backup filename.\n"
         "On restore, defaults to the last backup file. "
         "On backup, defaults to a filename with a timestamp",
     )
-    arg_parser.add_argument(
+    parser.add_argument(
         "--days-to-keep",
-        help="Number of days to keep backups"
+        default=2,
+        help="Number of days to keep backups also called retention days"
     )
-    arg_parser.add_argument(
+    group.add_argument(
         "--restore",
         action="store_true",
         help="Restore database",
     )
-    arg_parser.add_argument(
+    group.add_argument(
         "--backup",
         action="store_true",
         help="Backup database",
     )
-    arg_parser.add_argument(
+    parser.add_argument(
         "--no-neutralize",
+        default=True,
         action="store_true",
         help="Make an exact database (no neutralize)",
     )
-    args = arg_parser.parse_args()
-    if args.restore and args.backup:
-        print("Yu must issue a backup or a restore command")
-        exit()
+    parser.add_argument(
+        "--project",
+        help="Project to restore",
+    )
+    args = parser.parse_args()
 
-    print("Database utils V1.4.0")
+    print("Database utils V1.4.1")
     print()
 
     if args.restore:
