@@ -15,6 +15,10 @@ import zipfile
 import shutil
 import pytz
 
+BASE = "/base"
+BASE = "/odoo/ar/odoo-16.0e/bukito"
+HOST = "db"
+HOST = "localhost"
 
 def get_restore_filename(args):
     """Obtener el nombre del archivo hacia el cual backupear
@@ -46,11 +50,11 @@ def get_backup_filename(args):
     """
 
     if args.backupfile:
-        backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
-        print("The selected backup is " + backup_filename)
+        backup_filename = f"{BASE}/backup_dir/{args.backupfile}"
+        print(f"The selected backup is {backup_filename}")
         return backup_filename
     else:
-        files = glob.glob(f"{args.base}/backup_dir/*.zip")
+        files = glob.glob(f"{BASE}/backup_dir/*.zip")
         if files:
             backup_filename = max(files, key=os.path.getctime)
             print(f"Choosing the latest backup {os.path.basename(backup_filename)}")
@@ -64,11 +68,14 @@ def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
 
     # Path to the filestore folder
-    filestorepath = f"{args.base}/data_dir/filestore/{args.db_name}"
+    filestorepath = f"{BASE}/data_dir/filestore/{args.db_name}"
 
     # If the filestore folder already exists, delete it
     if os.path.exists(filestorepath):
-        shutil.rmtree(filestorepath)
+        try:
+            shutil.rmtree(filestorepath)
+        except Exception as e:
+            print(str(e))
 
     # Open the ZIP file
     with ZipFile(backup_filename, "r") as zip_ref:
@@ -78,11 +85,11 @@ def deflate_zip(args, backup_filename, tempdir):
             zip_ref.extractall(path=tempdir)
 
         # copiar el filestore al destino
-        shutil.copytree(tempdir + "/filestore", filestorepath)
+        try:
+            shutil.copytree(f"{tempdir}/filestore", filestorepath)
+        except Exception as e:
+            print(str(e))
 
-        # remover lo que sobra del destino
-        shutil.rmtree(filestorepath + "filestore")
-        os.remove(filestorepath + "dump.sql")
 
     # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
@@ -117,7 +124,6 @@ def create_database(args, cur):
     sql = f"CREATE DATABASE {args.db_name};"
     cur.execute(sql)
 
-
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
     import requests
@@ -125,7 +131,7 @@ def do_restore_database(args, backup_filename):
     from werkzeug.datastructures import FileStorage
 
     # Obtener datos del proyecto
-    with open(args.project + "/__manifest__.py", "r") as proy:
+    with open(f"{BASE}/sources/{args.project}/__manifest__.py", "r") as proy:
         manifest_content = proy.read()
 
     manifest_dict = ast.literal_eval(manifest_content)
@@ -137,67 +143,56 @@ def do_restore_database(args, backup_filename):
     for item in config:
         if item.startswith("admin_passwd"):
             _, admin_passwd = item.split("=", 1)
+            admin_passwd.split()
+            break
 
     print("do_restore_database ---------------------------------", backup_filename)
 
-    with open(backup_filename, "rb") as file:
-        backup = file.read()
-    backup_file = FileStorage(
-        stream=io.BytesIO(backup),
-        filename=backup_filename,
-        content_type="application/zip",
-    )
+    with tempfile.TemporaryDirectory() as tempdir:
+        # Extraer el Filestore al filestore de la estructura y el backup al temp dir
+        dump_filename = deflate_zip(args, backup_filename, tempdir)
+        with open(dump_filename, "r") as d_filename:
+            # Run psql command as a subprocess, and specify that the dump file should
+            # be passed as standard input to the psql process
+            os.environ["PGPASSWORD"] = "odoo"
+            print("Restoring Database")
+            process = subprocess.run(
+                ["psql", "-U", "odoo", "-h", f"{HOST}", "-d", f"{args.db_name}"],
+                stdout=subprocess.PIPE,
+                stdin=d_filename,
+            )
 
-    print("se leyo el archivo de backup")
+        if int(process.returncode) != 0:
+            print(f"The restored proces end with error {process.returncode}")
+            exit(1)
 
-    url = f"http://{odoo_container}:8069/web/database/restore"
-    master_pwd = admin_passwd.strip()
-    db_name = args.backupfile
-    neutralize_database = "on" if args.no_neutralize else "off"
-
-    data = {
-        "master_pwd": master_pwd,
-        "backup_file": backup_file,
-        "name": db_name,
-        "copy": "false",
-        "neutralize_database": neutralize_database,
-    }
-    import json
-
+def get_installed_modules(cur):
     try:
-        answer = requests.post(url, data=json.dumps(data))
-    except Exception as ex:
-        print("No se puede enviar post odoo ", str(ex))
-        exit()
-    if answer.status_code != 200:
-        print(">>>>>>>>>>", answer, answer.text)
-        exit()
+        cur.execute('''
+            SELECT name
+            FROM ir_module_module
+            WHERE state IN ('installed', 'to upgrade', 'to remove');
+        ''')
+    except Exception as e:
+        print(str(e))
+    return [result[0] for result in cur.fetchall()]
 
-    print("respuesta sin error -------------------", answer)
-    exit()
-    # with tempfile.TemporaryDirectory() as tempdir:
-    #     # Extraer el Filestore al filestore de la estructura y el backup al temp dir
-    #     dump_filename = deflate_zip(args, backup_filename, tempdir)
-    #     with open(dump_filename, "r") as d_filename:
-    #         # Run psql command as a subprocess, and specify that the dump file should
-    #         # be passed as standard input to the psql process
-    #         os.environ["PGPASSWORD"] = "odoo"
-    #         print("Restoring Database")
-    #         process = subprocess.run(
-    #             ["psql", "-U", "odoo", "-h", "db", "-d", "%s" % args.db_name],
-    #             stdout=subprocess.PIPE,
-    #             stdin=d_filename,
-    #         )
-
-    #     if int(process.returncode) != 0:
-    #         print(f"The restored proces end with error {process.returncode}")
-    #         exit(1)
-
+def get_neutralization_queries(modules):
+    # neutralization for each module
+    modules_path = f"{BASE}/sources"
+    for module in modules:
+        filename = odoo.modules.get_module_resource(module, 'data/neutralize.sql')
+        if filename:
+            with odoo.tools.misc.file_open(filename) as file:
+                yield file.read().strip()
 
 def neutralize_database(args, cur):
     """Neutralizar base de datos luego de hacer el restore"""
 
+    installed_modules = get_installed_modules(cur)
+    queries = get_neutralization_queries(installed_modules)
     # obtener todos los archivos neutralize.sql
+
     # sudo docker exec -it odoo find -name neutralize.sql
 
     sql = """
@@ -272,12 +267,13 @@ def cleanup_backup_files(args):
 def restore_database(args):
     if not args.db_name:
         print("Missing --db-name argument")
+        exit(1)
 
     try:
         # Crear conexion a la base de datos
         conn = psycopg2.connect(
             user="odoo",
-            host="localhost",
+            host=HOST,
             port=5432,
             password="odoo",
             dbname="postgres",
@@ -316,11 +312,6 @@ if __name__ == "__main__":
     group = parser.add_mutually_exclusive_group(required=True)
 
     parser.add_argument(
-        "--base",
-        default="/base",
-        help="Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)",
-    )
-    parser.add_argument(
         "--db-name",
         help="Name of the database to restore to or to back up from",
     )
@@ -347,13 +338,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--no-neutralize",
-        default=True,
+        default=False,
         action="store_true",
         help="Make an exact database (no neutralize)",
     )
     parser.add_argument(
         "--project",
-        help="Project to restore",
+        help="Project to restore. i.e. cl-bukito",
     )
     args = parser.parse_args()
 

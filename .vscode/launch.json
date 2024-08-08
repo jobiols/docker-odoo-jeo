@@ -6,7 +6,8 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--restore","--db-name","bukito_prod","--base","/odoo/ar/odoo-16.0e/bukito","--project","/odoo/ar/odoo-16.0e/bukito/sources/cl-bukito/bukito_default"],
+            "args": ["--restore","--db-name","bukito_prod","--project",
+                     "cl-bukito/bukito_default","--backupfile", "bkp_2024-08-04_22-07-32.zip"],
             "type": "python",
             "request": "launch",
             "program": "${file}",
