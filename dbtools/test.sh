@@ -20,7 +20,8 @@ echo
 sudo docker run --rm -i \
     --link pg-villandry16:db \
     -v /odoo/ar/odoo-16.0e/villandry16:/base \
+    -u $(id -u):$(id -u) \
     jobiols/dbtools:1.5.0 \
     --db-name villandry_prod \
     --restore \
-    --project cl-villandry/villandry16_default
+    --project cl-villandry/villandry_default

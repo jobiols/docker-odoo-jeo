@@ -11,14 +11,16 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import os, glob
 import datetime
 from zipfile import ZipFile
-import zipfile
 import shutil
-import pytz
+import ast
+
+
 
 BASE = "/base"
-#BASE = "/odoo/ar/odoo-16.0e/velute"
+# BASE = "/odoo/ar/odoo-16.0e/velute"
 HOST = "db"
-#HOST = "localhost"
+# HOST = "localhost"
+
 
 def get_restore_filename(args):
     """Obtener el nombre del archivo hacia el cual backupear
@@ -39,6 +41,7 @@ def get_restore_filename(args):
         zipfile = dt.strftime("bkp_%Y-%m-%d_%H-%M-%S")
 
     return f"{args.base}/backup_dir/{zipfile}"
+
 
 def get_backup_filename(args):
     """Obtener nombre del backup a restaurar
@@ -61,6 +64,7 @@ def get_backup_filename(args):
         else:
             print("No backups to restore !")
             exit()
+
 
 def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
@@ -109,20 +113,21 @@ def killing_db_connections(args, cur):
         """
     cur.execute(sql)
 
+
 def drop_database(args, cur):
     print("Dropping database if exists")
     sql = f"DROP DATABASE IF EXISTS {args.db_name};"
     cur.execute(sql)
+
 
 def create_database(args, cur):
     print("Creating database")
     sql = f"CREATE DATABASE {args.db_name};"
     cur.execute(sql)
 
+
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
-    import io, ast
-    from werkzeug.datastructures import FileStorage
 
     # Obtener datos del proyecto
     with open(f"{BASE}/sources/{args.project}/__manifest__.py", "r") as proy:
@@ -131,7 +136,6 @@ def do_restore_database(args, backup_filename):
     manifest_dict = ast.literal_eval(manifest_content)
 
     # Leer el proyecto
-    odoo_container = manifest_dict.get("name")
     config = manifest_dict.get("config")
     admin_passwd = False
     for item in config:
@@ -160,33 +164,38 @@ def do_restore_database(args, backup_filename):
             print(f"The restored proces end with error {process.returncode}")
             exit(1)
 
+
 def get_installed_modules(cur):
     try:
-        cur.execute('''
+        cur.execute(
+            """
             SELECT name
             FROM ir_module_module
             WHERE state IN ('installed', 'to upgrade', 'to remove');
-        ''')
+        """
+        )
     except Exception as e:
         print(str(e))
     return [result[0] for result in cur.fetchall()]
+
 
 def get_neutralization_queries(installed_modules):
     queries = []
     for root, dirs, files in os.walk(f"{BASE}/sources"):
         # Verifica si estamos en un directorio que contiene un __manifest__.py
-        if '__manifest__.py' in files:
+        if "__manifest__.py" in files:
             module_name = os.path.basename(root)
             # Verifica si este módulo está en la lista de módulos instalados
             if module_name in installed_modules:
                 # Busca el archivo neutralize.sql en el subdirectorio 'data'
-                neutralize_path = os.path.join(root, 'data', 'neutralize.sql')
+                neutralize_path = os.path.join(root, "data", "neutralize.sql")
                 if os.path.isfile(neutralize_path):
                     # Lee el contenido del archivo y lo agrega a la lista
-                    with open(neutralize_path, 'r', encoding='utf-8') as file:
+                    with open(neutralize_path, "r", encoding="utf-8") as file:
                         queries.append(file.read())
 
     return queries
+
 
 def neutralize_database(args):
     """Neutralizar base de datos luego de hacer el restore"""
@@ -217,6 +226,7 @@ def neutralize_database(args):
         cur.execute(query)
 
     print(f"Neutralization finished {len(queries)} modules neutralized")
+
 
 def backup_database(args):
 
@@ -249,6 +259,7 @@ def backup_database(args):
         # zipear y mover al archivo destino
         shutil.make_archive(backup_filename, "zip", tempdir)
 
+
 def cleanup_backup_files(args):
     """Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"""
 
@@ -267,8 +278,9 @@ def cleanup_backup_files(args):
             if file_age > max_age:
                 os.remove(filepath)
 
+
 def restore_database(args):
-    print('restore database')
+    print("restore database")
     try:
         # Crear conexion a la base de datos
         conn = psycopg2.connect(
