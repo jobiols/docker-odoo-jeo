@@ -16,9 +16,9 @@ import shutil
 import pytz
 
 BASE = "/base"
-BASE = "/odoo/ar/odoo-16.0e/bukito"
+#BASE = "/odoo/ar/odoo-16.0e/velute"
 HOST = "db"
-HOST = "localhost"
+#HOST = "localhost"
 
 def get_restore_filename(args):
     """Obtener el nombre del archivo hacia el cual backupear
@@ -39,7 +39,6 @@ def get_restore_filename(args):
         zipfile = dt.strftime("bkp_%Y-%m-%d_%H-%M-%S")
 
     return f"{args.base}/backup_dir/{zipfile}"
-
 
 def get_backup_filename(args):
     """Obtener nombre del backup a restaurar
@@ -62,7 +61,6 @@ def get_backup_filename(args):
         else:
             print("No backups to restore !")
             exit()
-
 
 def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
@@ -90,7 +88,6 @@ def deflate_zip(args, backup_filename, tempdir):
         except Exception as e:
             print(str(e))
 
-
     # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
     # uinfo = pwd.getpwnam("systemd-resolve")
@@ -112,12 +109,10 @@ def killing_db_connections(args, cur):
         """
     cur.execute(sql)
 
-
 def drop_database(args, cur):
     print("Dropping database if exists")
     sql = f"DROP DATABASE IF EXISTS {args.db_name};"
     cur.execute(sql)
-
 
 def create_database(args, cur):
     print("Creating database")
@@ -126,7 +121,6 @@ def create_database(args, cur):
 
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
-    import requests
     import io, ast
     from werkzeug.datastructures import FileStorage
 
@@ -177,43 +171,54 @@ def get_installed_modules(cur):
         print(str(e))
     return [result[0] for result in cur.fetchall()]
 
-def get_neutralization_queries(modules):
-    # neutralization for each module
-    modules_path = f"{BASE}/sources"
-    for module in modules:
-        filename = odoo.modules.get_module_resource(module, 'data/neutralize.sql')
-        if filename:
-            with odoo.tools.misc.file_open(filename) as file:
-                yield file.read().strip()
+def get_neutralization_queries(installed_modules):
+    queries = []
+    for root, dirs, files in os.walk(f"{BASE}/sources"):
+        # Verifica si estamos en un directorio que contiene un __manifest__.py
+        if '__manifest__.py' in files:
+            module_name = os.path.basename(root)
+            # Verifica si este módulo está en la lista de módulos instalados
+            if module_name in installed_modules:
+                # Busca el archivo neutralize.sql en el subdirectorio 'data'
+                neutralize_path = os.path.join(root, 'data', 'neutralize.sql')
+                if os.path.isfile(neutralize_path):
+                    # Lee el contenido del archivo y lo agrega a la lista
+                    with open(neutralize_path, 'r', encoding='utf-8') as file:
+                        queries.append(file.read())
 
-def neutralize_database(args, cur):
+    return queries
+
+def neutralize_database(args):
     """Neutralizar base de datos luego de hacer el restore"""
 
+    try:
+        # Crear conexion a la base de datos
+        conn = psycopg2.connect(
+            user="odoo",
+            host=HOST,
+            port=5432,
+            password="odoo",
+            dbname=args.db_name,
+        )
+    except Exception as ex:
+        print(str(ex.args[0]))
+        exit()
+
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+
     installed_modules = get_installed_modules(cur)
-    queries = get_neutralization_queries(installed_modules)
-    # obtener todos los archivos neutralize.sql
+    try:
+        queries = get_neutralization_queries(installed_modules)
+    except Exception as e:
+        print(e)
 
-    # sudo docker exec -it odoo find -name neutralize.sql
+    for query in queries:
+        cur.execute(query)
 
-    sql = """
-
-    """
-
-    cur.execute(sql)
-
+    print(f"Neutralization finished {len(queries)} modules neutralized")
 
 def backup_database(args):
-    """Para hacer un backup necesitamos saber si lo vamos a neutralizar si no esta
-    el parámetro --no-neutralize entonces se hace la neutralizacion"""
-
-    if not args.no_neutralize:
-        print("The neutralization is Not implemented")
-        exit()
-    else:
-        print("The database is not neutralized")
-
-    if not args.db_name:
-        print("Missing --db-name argument")
 
     # Obtener el nombre del restore
     backup_filename = get_restore_filename(args)
@@ -244,9 +249,8 @@ def backup_database(args):
         # zipear y mover al archivo destino
         shutil.make_archive(backup_filename, "zip", tempdir)
 
-
 def cleanup_backup_files(args):
-    "Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"
+    """Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"""
 
     # sin el parametro termina
     if not args.days_to_keep:
@@ -263,12 +267,8 @@ def cleanup_backup_files(args):
             if file_age > max_age:
                 os.remove(filepath)
 
-
 def restore_database(args):
-    if not args.db_name:
-        print("Missing --db-name argument")
-        exit(1)
-
+    print('restore database')
     try:
         # Crear conexion a la base de datos
         conn = psycopg2.connect(
@@ -303,7 +303,7 @@ def restore_database(args):
             f"WARNING - DATABASE IS NOT NEUTRALIZED - WARNING {resetear_color}"
         )
     else:
-        neutralize_database(args, cur)
+        neutralize_database(args)
         print(f"RESTORE FIHISHED FOR {args.db_name}, " "DATABASE IS NEUTRALIZED")
 
 
@@ -348,8 +348,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    print("Database utils V1.4.1")
+    print("Database utils V1.5.0")
     print()
+
+    if not args.db_name:
+        print("Missing --db-name argument")
+        exit(1)
 
     if args.restore:
         restore_database(args)

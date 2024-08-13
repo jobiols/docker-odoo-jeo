@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-sd build --rm=true -t jobiols/dbtools:1.4.1 ./
+sd build --rm=true -t jobiols/dbtools:1.5.0 ./

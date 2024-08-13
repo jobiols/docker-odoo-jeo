@@ -6,8 +6,9 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--restore","--db-name","bukito_prod","--project",
-                     "cl-bukito/bukito_default","--backupfile", "bkp_2024-08-04_22-07-32.zip"],
+            "args": ["--restore","--db-name","bukito_prod",
+                    "--project", "cl-velute/velute_default",
+                    "--backupfile", "bkp.zip"],
             "type": "python",
             "request": "launch",
             "program": "${file}",

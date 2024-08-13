@@ -27,7 +27,5 @@ RUN apt-get update && apt-get install -y postgresql-client-15 \
 RUN pip3 install psycopg2-binary pytz
 
 ADD dbtools.py /dbtools.py
-#ADD neutralize.sql /
-#ADD extend.sql /
 
 ENTRYPOINT ["/dbtools.py"]
