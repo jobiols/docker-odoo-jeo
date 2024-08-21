@@ -7,3 +7,7 @@ astor
 pyzk
 # LOPEZ izi_data
 sqlparse
+
+# upgrade utils
+git+https://github.com/odoo/upgrade-util@master
+markdown
