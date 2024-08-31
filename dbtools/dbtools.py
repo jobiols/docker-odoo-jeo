@@ -2,7 +2,7 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
-
+import configparser
 import argparse
 import subprocess
 import tempfile
@@ -193,7 +193,25 @@ def neutralize_database(args, cur):
     cur.execute(sql)
 
 
+def get_credentials(config_path):
+    """Leer el archivo de configuración y extrar credenciales postgres
+        db_name, db_host, db_port, db_user, db_password
+    """
+    config = configparser.ConfigParser()
+    config.read(config_path)
 
+    db_name = config.get('options', 'db_name', fallback=args.db_name)
+    db_host = config.get('options', 'db_host', fallback='db')
+    db_port = config.get('options', 'db_port', fallback=5432)
+    db_user = config.get('options', 'db_user', fallback='odoo')
+    db_password = config.get('options', 'db_password', fallback='odoo')
+    return {
+        'db_name': db_name,
+        'db_host': db_host,
+        'db_port': db_port,
+        'db_user': db_user,
+        'db_password': db_password
+    }
 
 def backup_database(args):
     """Para hacer un backup necesitamos saber si lo vamos a neutralizar si no esta
@@ -210,18 +228,21 @@ def backup_database(args):
     backup_filename = get_restore_filename(args)
     print(f"Backup {args.db_name} into file {backup_filename}")
 
+    # Obtener acceso a postgres desde odoo.conf
+    credentials = get_credentials(f"{args.base}/config/odoo.conf")
+
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
         # copiar el filestore a tempdir
         shutil.copytree(f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore")
-        os.environ["PGPASSWORD"] = "odoo"
+        os.environ["PGPASSWORD"] = credentials['db_password']
         # Crear el dump
         try:
             cmd = [
                 "pg_dump",
-                f"--dbname={args.db_name}",
-                f"--host=db",
-                "--username=odoo",
+                f"--dbname={credentials['db_name']}",
+                f"--host={credentials['db_host']}",
+                f"--username={credentials['db_user']}",
                 f"--file={tempdir}/dump.sql",
                 "--no-owner",
             ]
@@ -234,7 +255,7 @@ def backup_database(args):
         shutil.make_archive(backup_filename, "zip", tempdir)
 
 def cleanup_backup_files(args):
-    "Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"
+    """Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"""
 
     # sin el parametro termina
     if not args.days_to_keep:
@@ -334,7 +355,7 @@ if __name__ == "__main__":
         print("Yu must issue a backup or a restore command")
         exit()
 
-    print("Database utils V1.4.0")
+    print("Database utils V1.4.1")
     print()
 
     if args.restore:
