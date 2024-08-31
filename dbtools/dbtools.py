@@ -276,17 +276,19 @@ def restore_database(args):
     if not args.db_name:
         print("Missing --db-name argument")
 
+    # Obtener acceso a postgres desde odoo.conf
+    credentials = get_credentials(f"{args.base}/config/odoo.conf")
     try:
         # Crear conexion a la base de datos
         conn = psycopg2.connect(
-            user="odoo",
-            host="db",
-            port=5432,
-            password="odoo",
+            user=credentials['db_user'],
+            host=credentials['db_host'],
+            port=credentials['db_port'],
+            password=credentials['db_password'],
             dbname="postgres",
         )
     except Exception as ex:
-        print('No se puede conectar a la BD esta el contenedor levantado?',str(ex))
+        print('No se puede conectar a la BD esta el servidor postgres corriendo?',str(ex))
         exit()
 
     # Obtener el nombre del backup
