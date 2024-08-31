@@ -11,49 +11,52 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import os, glob
 import datetime
 from zipfile import ZipFile
-import zipfile
 import shutil
-import pytz
+import ast
+
+
+
+BASE = "/base"
+# BASE = "/odoo/ar/odoo-16.0e/velute"
+HOST = "db"
+# HOST = "localhost"
 
 
 def get_restore_filename(args):
-    """ Obtener el nombre del archivo hacia el cual backupear
-        El nombre del archivo para salvar el backup se obtiene del parametro
-        args.zipfile.
-        Si el archivo ya existe se termina con error.
-        Si no se especificó el nombre del archivo, se crea un nombre con la fecha
-        y la hora en GMT-3
+    """Obtener el nombre del archivo hacia el cual backupear
+    El nombre del archivo para salvar el backup se obtiene del parametro
+    args.zipfile.
+    Si el archivo ya existe se termina con error.
+    Si no se especificó el nombre del archivo, se crea un nombre con la fecha
+    y la hora en GMT-3
     """
-    if args.zipfile:
+    if args.backupfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
         # Verificar si el archivo existe y terminar con error
         if os.path.exists(backup_filename):
             print(f"The file {args.zipfile} already exists")
             exit()
     else:
-        fecha_hora_local = datetime.datetime.now(
-            pytz.timezone("America/Argentina/Buenos_Aires")
-        )
-        zipfile = fecha_hora_local.strftime("bkp_%Y-%m-%d_%H-%M-%S_GMT-3")
+        dt = datetime.datetime.now()
+        zipfile = dt.strftime("bkp_%Y-%m-%d_%H-%M-%S")
 
-    print(f"The new backup file is {zipfile}")
     return f"{args.base}/backup_dir/{zipfile}"
 
 
 def get_backup_filename(args):
-    """ Obtener nombre del backup a restaurar
-        El nombre del backup a restaurar viene en args.zipfile
-        si el argumento viene vacío entonces se obtiene el nombre del último backup
-        que se hizo.
-        Finalmente si no hay ningún backup termina con error
+    """Obtener nombre del backup a restaurar
+    El nombre del backup a restaurar viene en args.zipfile
+    si el argumento viene vacío entonces se obtiene el nombre del último backup
+    que se hizo.
+    Finalmente si no hay ningún backup termina con error
     """
 
-    if args.zipfile:
-        backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
-        print("The selected backup is " + backup_filename)
+    if args.backupfile:
+        backup_filename = f"{BASE}/backup_dir/{args.backupfile}"
+        print(f"The selected backup is {backup_filename}")
         return backup_filename
     else:
-        files = glob.glob("%s/backup_dir/*.zip" % args.base)
+        files = glob.glob(f"{BASE}/backup_dir/*.zip")
         if files:
             backup_filename = max(files, key=os.path.getctime)
             print(f"Choosing the latest backup {os.path.basename(backup_filename)}")
@@ -67,11 +70,14 @@ def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
 
     # Path to the filestore folder
-    filestorepath = f"{args.base}/data_dir/filestore/{args.db_name}"
+    filestorepath = f"{BASE}/data_dir/filestore/{args.db_name}"
 
     # If the filestore folder already exists, delete it
     if os.path.exists(filestorepath):
-        shutil.rmtree(filestorepath)
+        try:
+            shutil.rmtree(filestorepath)
+        except Exception as e:
+            print(str(e))
 
     # Open the ZIP file
     with ZipFile(backup_filename, "r") as zip_ref:
@@ -81,11 +87,10 @@ def deflate_zip(args, backup_filename, tempdir):
             zip_ref.extractall(path=tempdir)
 
         # copiar el filestore al destino
-        shutil.copytree(tempdir+'/filestore', filestorepath)
-
-        # remover lo que sobra del destino
-        shutil.rmtree(filestorepath + 'filestore')
-        os.remove(filestorepath + 'dump.sql')
+        try:
+            shutil.copytree(f"{tempdir}/filestore", filestorepath)
+        except Exception as e:
+            print(str(e))
 
     # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
@@ -123,88 +128,107 @@ def create_database(args, cur):
 
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
-    import requests
-    import io
-    from werkzeug.datastructures import FileStorage
 
-    # <class 'werkzeug.datastructures.FileStorage'>
-    odoo_container = 'lopez'
-    print('do_restore_database ---------------------------------', backup_filename)
+    # Obtener datos del proyecto
+    with open(f"{BASE}/sources/{args.project}/__manifest__.py", "r") as proy:
+        manifest_content = proy.read()
 
-    with open(backup_filename, 'rb') as file:
-        backup = file.read()
-    backup_file = FileStorage(stream=io.BytesIO(backup), filename=backup_filename, content_type='application/zip')
+    manifest_dict = ast.literal_eval(manifest_content)
 
-    print('se leyo el archivo de backup')
+    # Leer el proyecto
+    config = manifest_dict.get("config")
+    admin_passwd = False
+    for item in config:
+        if item.startswith("admin_passwd"):
+            _, admin_passwd = item.split("=", 1)
+            admin_passwd.split()
+            break
 
-    url = f"http://{odoo_container}:8069/web/database/restore"
-    master_pwd = 'lopez-23'
-    db_name = 'lopez_test_0102'
-    neutralize_database = 'on'
+    print("do_restore_database ---------------------------------", backup_filename)
 
-    data = {
-        'master_pwd': master_pwd,
-        'backup_file': backup_file,
-        'name': db_name,
-        'copy': 'false',
-        'neutralize_database': neutralize_database,
-    }
-    import json
+    with tempfile.TemporaryDirectory() as tempdir:
+        # Extraer el Filestore al filestore de la estructura y el backup al temp dir
+        dump_filename = deflate_zip(args, backup_filename, tempdir)
+        with open(dump_filename, "r") as d_filename:
+            # Run psql command as a subprocess, and specify that the dump file should
+            # be passed as standard input to the psql process
+            os.environ["PGPASSWORD"] = "odoo"
+            print("Restoring Database")
+            process = subprocess.run(
+                ["psql", "-U", "odoo", "-h", f"{HOST}", "-d", f"{args.db_name}"],
+                stdout=subprocess.PIPE,
+                stdin=d_filename,
+            )
+
+        if int(process.returncode) != 0:
+            print(f"The restored proces end with error {process.returncode}")
+            exit(1)
+
+
+def get_installed_modules(cur):
     try:
-        answer = requests.post(url, data=json.dumps(data))
-    except Exception as ex:
-        print('No se puede enviar post odoo ',str(ex))
-        exit()
-    if answer.status_code != 200:
-        print('>>>>>>>>>>',answer,answer.text)
-        exit()
-
-    print('respuesta sin error -------------------',answer)
-    exit()
-    # with tempfile.TemporaryDirectory() as tempdir:
-    #     # Extraer el Filestore al filestore de la estructura y el backup al temp dir
-    #     dump_filename = deflate_zip(args, backup_filename, tempdir)
-    #     with open(dump_filename, "r") as d_filename:
-    #         # Run psql command as a subprocess, and specify that the dump file should
-    #         # be passed as standard input to the psql process
-    #         os.environ["PGPASSWORD"] = "odoo"
-    #         print("Restoring Database")
-    #         process = subprocess.run(
-    #             ["psql", "-U", "odoo", "-h", "db", "-d", "%s" % args.db_name],
-    #             stdout=subprocess.PIPE,
-    #             stdin=d_filename,
-    #         )
-
-    #     if int(process.returncode) != 0:
-    #         print(f"The restored proces end with error {process.returncode}")
-    #         exit(1)
+        cur.execute(
+            """
+            SELECT name
+            FROM ir_module_module
+            WHERE state IN ('installed', 'to upgrade', 'to remove');
+        """
+        )
+    except Exception as e:
+        print(str(e))
+    return [result[0] for result in cur.fetchall()]
 
 
-def neutralize_database(args, cur):
+def get_neutralization_queries(installed_modules):
+    queries = []
+    for root, dirs, files in os.walk(f"{BASE}/sources"):
+        # Verifica si estamos en un directorio que contiene un __manifest__.py
+        if "__manifest__.py" in files:
+            module_name = os.path.basename(root)
+            # Verifica si este módulo está en la lista de módulos instalados
+            if module_name in installed_modules:
+                # Busca el archivo neutralize.sql en el subdirectorio 'data'
+                neutralize_path = os.path.join(root, "data", "neutralize.sql")
+                if os.path.isfile(neutralize_path):
+                    # Lee el contenido del archivo y lo agrega a la lista
+                    with open(neutralize_path, "r", encoding="utf-8") as file:
+                        queries.append(file.read())
+
+    return queries
+
+
+def neutralize_database(args):
     """Neutralizar base de datos luego de hacer el restore"""
 
-    #obtener todos los archivos neutralize.sql
-    # sudo docker exec -it odoo find -name neutralize.sql
+    try:
+        # Crear conexion a la base de datos
+        conn = psycopg2.connect(
+            user="odoo",
+            host=HOST,
+            port=5432,
+            password="odoo",
+            dbname=args.db_name,
+        )
+    except Exception as ex:
+        print(str(ex.args[0]))
+        exit()
 
-    sql = """
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
 
-    """
+    installed_modules = get_installed_modules(cur)
+    try:
+        queries = get_neutralization_queries(installed_modules)
+    except Exception as e:
+        print(e)
 
-    cur.execute(sql)
+    for query in queries:
+        cur.execute(query)
 
-
+    print(f"Neutralization finished {len(queries)} modules neutralized")
 
 
 def backup_database(args):
-    """Para hacer un backup necesitamos saber si lo vamos a neutralizar si no esta
-    el parámetro --no-neutralize entonces se hace la neutralizacion"""
-
-    if not args.no_neutralize:
-        print("The neutralization is Not implemented")
-        exit()
-
-    if not args.db_name:
-        print("Missing --db-name argument")
 
     # Obtener el nombre del restore
     backup_filename = get_restore_filename(args)
@@ -213,7 +237,9 @@ def backup_database(args):
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
         # copiar el filestore a tempdir
-        shutil.copytree(f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore")
+        shutil.copytree(
+            f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore"
+        )
         os.environ["PGPASSWORD"] = "odoo"
         # Crear el dump
         try:
@@ -233,8 +259,9 @@ def backup_database(args):
         # zipear y mover al archivo destino
         shutil.make_archive(backup_filename, "zip", tempdir)
 
+
 def cleanup_backup_files(args):
-    "Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"
+    """Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"""
 
     # sin el parametro termina
     if not args.days_to_keep:
@@ -251,21 +278,20 @@ def cleanup_backup_files(args):
             if file_age > max_age:
                 os.remove(filepath)
 
-def restore_database(args):
-    if not args.db_name:
-        print("Missing --db-name argument")
 
+def restore_database(args):
+    print("restore database")
     try:
         # Crear conexion a la base de datos
         conn = psycopg2.connect(
             user="odoo",
-            host="db",
+            host=HOST,
             port=5432,
             password="odoo",
             dbname="postgres",
         )
     except Exception as ex:
-        print('No se puede conectar a la BD esta el contenedor levantado?',str(ex))
+        print(str(ex.args[0]))
         exit()
 
     # Obtener el nombre del backup
@@ -289,53 +315,57 @@ def restore_database(args):
             f"WARNING - DATABASE IS NOT NEUTRALIZED - WARNING {resetear_color}"
         )
     else:
-        neutralize_database(args, cur)
+        neutralize_database(args)
         print(f"RESTORE FIHISHED FOR {args.db_name}, " "DATABASE IS NEUTRALIZED")
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
-        "--base",
-        default="/base",
-        help="Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)",
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    parser.add_argument(
+        "--db-name",
+        help="Name of the database to restore to or to back up from",
     )
-    arg_parser.add_argument(
-        "--db_name",
-        help="Database name to restore into or tu backup from",
-    )
-    arg_parser.add_argument(
-        "--zipfile",
+    parser.add_argument(
+        "--backupfile",
         help="The backup filename.\n"
         "On restore, defaults to the last backup file. "
         "On backup, defaults to a filename with a timestamp",
     )
-    arg_parser.add_argument(
+    parser.add_argument(
         "--days-to-keep",
-        help="Number of days to keep backups"
+        default=2,
+        help="Number of days to keep backups also called retention days",
     )
-    arg_parser.add_argument(
+    group.add_argument(
         "--restore",
         action="store_true",
         help="Restore database",
     )
-    arg_parser.add_argument(
+    group.add_argument(
         "--backup",
         action="store_true",
         help="Backup database",
     )
-    arg_parser.add_argument(
+    parser.add_argument(
         "--no-neutralize",
+        default=False,
         action="store_true",
         help="Make an exact database (no neutralize)",
     )
-    args = arg_parser.parse_args()
-    if args.restore and args.backup:
-        print("Yu must issue a backup or a restore command")
-        exit()
+    parser.add_argument(
+        "--project",
+        help="Project to restore. i.e. cl-bukito",
+    )
+    args = parser.parse_args()
 
-    print("Database utils V1.4.0")
+    print("Database utils V1.5.0")
     print()
+
+    if not args.db_name:
+        print("Missing --db-name argument")
+        exit(1)
 
     if args.restore:
         restore_database(args)
