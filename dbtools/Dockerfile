@@ -1,5 +1,5 @@
 FROM debian:bullseye-slim
-LABEL maintainer Jorge Obiols <jorge.obiols@gmail.com>
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 RUN apt-get update \
         && apt-get install -y --no-install-recommends \
