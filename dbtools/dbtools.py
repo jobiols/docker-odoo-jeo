@@ -122,7 +122,6 @@ def do_restore_database(args, backup_filename, credentials):
     """Restore database and filestore"""
     import requests
     import io
-    from werkzeug.datastructures import FileStorage
 
     with tempfile.TemporaryDirectory() as tempdir:
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir

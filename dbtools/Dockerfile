@@ -4,8 +4,8 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 RUN apt-get update \
         && apt-get install -y --no-install-recommends \
             ca-certificates \
-            dirmngr \
-            fonts-noto-cjk \
+#            dirmngr \
+#            fonts-noto-cjk \
             gnupg \
             python3-pip \
             zip \
@@ -28,7 +28,6 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install pytz requests
-RUN pip install Werkzeug
 
 ADD dbtools.py /dbtools.py
 
