@@ -31,7 +31,5 @@ RUN pip install pytz requests
 RUN pip install Werkzeug
 
 ADD dbtools.py /dbtools.py
-ADD neutralize.sql /
-ADD extend.sql /
 
 ENTRYPOINT ["/dbtools.py"]

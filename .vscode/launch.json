@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--db_name", "lopez_prod", "--no-neutralize", "--base","/odoo/ar/odoo-16.0e/lopez", "--restore"],
+            "args": ["--db_name", "elektrim_prod", "--base","/odoo/ar/odoo-16.0e/elektrim", "--restore"],
             "type": "python",
             "request": "launch",
             "program": "${file}",
