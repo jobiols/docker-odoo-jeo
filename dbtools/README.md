@@ -1,11 +1,30 @@
 Docker image with posgres tools to manage backup and restore
 
+    #!/bin/bash
+    # --------------------------------------------------------------------------------------
+    # Hacer un backup de la base de produccion
+    # --------------------------------------------------------------------------------------
     sudo docker run --rm -i \
-        --link postgres_image:db \
-        -v base_path:/base \
-        jobiols/dbtools:1.4.0 \
-            --db_name bukito_prod \
+        --network compose_default \
+        --volume /odoo_ar/odoo-16.0e/lopez:/base \
+        jobiols/dbtools:1.4.1 \
+            --db_name lopez_prod \
+            --no-neutralize \
+            --days-to-keep 3 \
             --backup
+
+
+    #!/bin/bash
+    # --------------------------------------------------------------------------------------
+    # Hacer un restore de la base de produccion
+    # --------------------------------------------------------------------------------------
+    sudo docker run --rm -i \
+        --network compose_default \
+        --volume /odoo_ar/odoo-16.0e/lopez:/base \
+        jobiols/dbtools:1.4.1 \
+            --db_name lopez_prod \
+            --no-neutralize \
+            --restore
 
     optional arguments:
     -h, --help         show this help message and exit
