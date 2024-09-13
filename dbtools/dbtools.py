@@ -2,6 +2,8 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
+import requests
+import io
 import ast
 import configparser
 import argparse
@@ -120,8 +122,6 @@ def create_database(args, cur):
 
 def do_restore_database(args, backup_filename, credentials):
     """Restore database and filestore"""
-    import requests
-    import io
 
     with tempfile.TemporaryDirectory() as tempdir:
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
@@ -144,10 +144,6 @@ def do_restore_database(args, backup_filename, credentials):
                 stdout=subprocess.PIPE,
                 stdin=d_filename,
             )
-
-    #     if int(process.returncode) != 0:
-    #         print(f"The restored proces end with error {process.returncode}")
-    #         exit(1)
 
 
 def neutralize_database(args, cur):

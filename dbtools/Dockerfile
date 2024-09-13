@@ -11,7 +11,7 @@ RUN apt-get update \
             zip \
             unzip
 
-    RUN pip install psycopg2-binary
+RUN pip install psycopg2-binary
 
 # install latest postgresql-client
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
@@ -28,6 +28,9 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install pytz requests
+
+RUN useradd -ms /bin/bash ubuntu
+USER ubuntu
 
 ADD dbtools.py /dbtools.py
 
