@@ -153,14 +153,15 @@ def neutralize_database(args, cur):
     sources = f"{args.base}/sources"
     for root, dirs, files in os.walk(sources):
         if '__manifest__.py' in files:
+            # Esto se trae todos los manifest que pueden ser montones
             manifest = f"{root}/__manifest__.py"
-            break
+            with open(manifest, "r") as f:
+                man = f.read()
+            # Verifica si tiene la key docker-images y termina
+            data = ast.literal_eval(man)
+            if data.get('docker-images'):
+                break
 
-    with open(manifest, "r") as f:
-        man = f.read()
-
-    data = ast.literal_eval(man)
-    print(data)
     for image in data.get("docker-images"):
         if "odoo" in image:
             break
