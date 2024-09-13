@@ -150,10 +150,15 @@ def neutralize_database(args, cur):
     """Neutralizar base de datos luego de hacer el restore"""
 
     # Obtener la imagen desde el cl
-    proy_name = os.path.basename(args.base)
-    manifest = f"{args.base}/sources/cl-{proy_name}/{proy_name}_default/__manifest__.py"
+    sources = f"{args.base}/sources"
+    for root, dirs, files in os.walk(sources):
+        if '__manifest__.py' in files:
+            manifest = f"{root}/__manifest__.py"
+            break
+
     with open(manifest, "r") as f:
         man = f.read()
+        
     data = ast.literal_eval(man)
     for image in data.get("docker-images"):
         if "odoo" in image:
