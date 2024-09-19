@@ -2,7 +2,6 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
-import requests
 import io
 import ast
 import configparser
@@ -152,14 +151,14 @@ def neutralize_database(args, cur):
     # Obtener la imagen desde el cl
     sources = f"{args.base}/sources"
     for root, dirs, files in os.walk(sources):
-        if '__manifest__.py' in files:
+        if "__manifest__.py" in files:
             # Esto se trae todos los manifest que pueden ser montones
             manifest = f"{root}/__manifest__.py"
             with open(manifest, "r") as f:
                 man = f.read()
             # Verifica si tiene la key docker-images y termina
             data = ast.literal_eval(man)
-            if data.get('docker-images'):
+            if data.get("docker-images"):
                 break
 
     for image in data.get("docker-images"):
@@ -325,34 +324,40 @@ if __name__ == "__main__":
         help="Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)",
     )
     arg_parser.add_argument(
-        "--db_name",
-        help="Database name to restore into or tu backup from",
+        "--db-name",
+        help="Database name to restore into or tu backup from, if ommited "
+        "default database is used.",
     )
     arg_parser.add_argument(
         "--zipfile",
         help="The backup filename.\n"
-        "On restore, defaults to the last backup file. "
+        "On restore, defaults to the last backup file in BASE/backup_dir. "
         "On backup, defaults to a filename with a timestamp",
     )
-    arg_parser.add_argument("--days-to-keep", help="Number of days to keep backups")
+    arg_parser.add_argument(
+        "--days-to-keep",
+        help="Number of days to keep backups, if ommited, none of the old "
+        "backups wil be deleted",
+    )
     arg_parser.add_argument(
         "--restore",
         action="store_true",
-        help="Restore database",
+        help="Restore database. This parameter is mutually exclusive with --backup",
     )
     arg_parser.add_argument(
         "--backup",
         action="store_true",
-        help="Backup database",
+        help="Backup database. This parameter is mutually exclusive with --restore",
     )
     arg_parser.add_argument(
         "--no-neutralize",
         action="store_true",
-        help="Make an exact database (no neutralize)",
+        help="Make an exact database (no neutralize) if omitted, a neutralized "
+        "restore will be generated; this does not work with --backup.",
     )
     args = arg_parser.parse_args()
     if args.restore and args.backup:
-        print("Yu must issue a backup or a restore command")
+        print("Yu must issue a backup or a restore command, not both")
         exit()
 
     print("Database utils V1.4.1")
