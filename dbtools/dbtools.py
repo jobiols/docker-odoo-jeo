@@ -18,7 +18,9 @@ import shutil
 import pytz
 
 
-def get_restore_filename(args):
+params = {}
+
+def get_zip_filename(args):
     """Obtener el nombre del archivo hacia el cual backupear
     El nombre del archivo para salvar el backup se obtiene del parametro
     args.zipfile.
@@ -28,41 +30,21 @@ def get_restore_filename(args):
     """
     if args.zipfile:
         backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
-        # Verificar si el archivo existe y terminar con error
-        if os.path.exists(backup_filename):
-            print(f"The file {args.zipfile} already exists")
-            exit()
-    else:
-        fecha_hora_local = datetime.datetime.now(
-            pytz.timezone("America/Argentina/Buenos_Aires")
-        )
-        zipfile = fecha_hora_local.strftime("bkp_%Y-%m-%d_%H-%M-%S_GMT-3")
-
-    print(f"The new backup file is {zipfile}")
-    return f"{args.base}/backup_dir/{zipfile}"
-
-
-def get_backup_filename(args):
-    """Obtener nombre del backup a restaurar
-    El nombre del backup a restaurar viene en args.zipfile
-    si el argumento viene vacío entonces se obtiene el nombre del último backup
-    que se hizo.
-    Finalmente si no hay ningún backup termina con error
-    """
-
-    if args.zipfile:
-        backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
-        print("The selected backup is " + backup_filename)
-        return backup_filename
-    else:
-        files = glob.glob("%s/backup_dir/*.zip" % args.base)
-        if files:
-            backup_filename = max(files, key=os.path.getctime)
-            print(f"Choosing the latest backup {os.path.basename(backup_filename)}")
-            return backup_filename
+        # Verificaciones
+        if args.backup:
+            if os.path.exists(backup_filename):
+                print(f"The file {args.zipfile} already exists")
+                exit()
         else:
-            print("No backups to restore !")
-            exit()
+            if not os.path.exists(backup_filename):
+                print(f"The file {args.zipfile} does not exists")
+                exit()
+    else:
+        fecha_hora_local = datetime.datetime.now()
+        zipfile = fecha_hora_local.strftime("bkp_%Y%m%d_%H:%M:%S")
+
+    print(f"The backup file is {zipfile}")
+    return f"{args.base}/backup_dir/{zipfile}"
 
 
 def deflate_zip(args, backup_filename, tempdir):
@@ -186,59 +168,50 @@ def neutralize_database(args, cur):
         print(e.stderr)  # Mostrar la salida de error estándar
 
 
-def get_credentials(config_path):
-    """Leer el archivo de configuración y extrar credenciales postgres
-    db_name, db_host, db_port, db_user, db_password
+def get_backup_filename(args):
+    """Obtener nombre del backup a restaurar
+    El nombre del backup a restaurar viene en args.zipfile
+    si el argumento viene vacío entonces se obtiene el nombre del último backup
+    que se hizo.
+    Finalmente si no hay ningún backup termina con error
     """
-    config = configparser.ConfigParser()
-    config.read(config_path)
 
-    db_name = config.get("options", "db_name", fallback=args.db_name)
-    db_host = config.get("options", "db_host", fallback="db")
-    db_port = config.get("options", "db_port", fallback=5432)
-    db_user = config.get("options", "db_user", fallback="odoo")
-    db_password = config.get("options", "db_password", fallback="odoo")
-    return {
-        "db_name": db_name,
-        "db_host": db_host,
-        "db_port": db_port,
-        "db_user": db_user,
-        "db_password": db_password,
-    }
-
+    if args.zipfile:
+        backup_filename = f"{args.base}/backup_dir/{args.zipfile}"
+        print("The selected backup is " + backup_filename)
+        return backup_filename
+    else:
+        files = glob.glob("%s/backup_dir/*.zip" % args.base)
+        if files:
+            backup_filename = max(files, key=os.path.getctime)
+            print(f"Choosing the latest backup {os.path.basename(backup_filename)}")
+            return backup_filename
+        else:
+            print("No backups to restore !")
+            exit()
 
 def backup_database(args):
-    """Para hacer un backup necesitamos saber si lo vamos a neutralizar si no esta
-    el parámetro --no-neutralize entonces se hace la neutralizacion"""
-
-    if not args.no_neutralize:
-        print("The neutralization is Not implemented")
-        exit()
-
-    if not args.db_name:
-        print("Missing --db-name argument")
+    """ Hacer un backup de la base de datos"""
 
     # Obtener el nombre del restore
-    backup_filename = get_restore_filename(args)
-    print(f"Backup {args.db_name} into file {backup_filename}")
-
-    # Obtener acceso a postgres desde odoo.conf
-    credentials = get_credentials(f"{args.base}/config/odoo.conf")
+    backup_filename = get_zip_filename(args)
+    print(f"Backing up database {args.db_name} into file {backup_filename}")
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
+
         # copiar el filestore a tempdir
         shutil.copytree(
-            f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore"
+            f"{args.base}/data_dir/filestore/{args.db_name}", f"{tempdir}/filestore/{args.db_name}"
         )
-        os.environ["PGPASSWORD"] = credentials["db_password"]
+        os.environ["PGPASSWORD"] = params["db_password"]
         # Crear el dump
         try:
             cmd = [
                 "pg_dump",
-                f"--dbname={credentials['db_name']}",
-                f"--host={credentials['db_host']}",
-                f"--username={credentials['db_user']}",
+                f"--dbname={params['db_name']}",
+                f"--host={params['db_host']}",
+                f"--username={params['db_user']}",
                 f"--file={tempdir}/dump.sql",
                 "--no-owner",
             ]
@@ -268,31 +241,53 @@ def cleanup_backup_files(args):
             file_age = actual_date - file_date
             if file_age > max_age:
                 os.remove(filepath)
+ 
+
+def check_parameters(args):
+    """Se verifica que esten todos los parametros necesarios si no están se 
+    buscan en la configuracion del proyecto o en odoo.conf"""
+
+
+    # ########################### Obtener el manifiesto y el nombre del proyecto
+    root_dir = f"{args.base}/sources"
+    # Recorrer los directorios en la raíz
+    for folder in os.listdir(root_dir):
+        folder_path = os.path.join(root_dir, folder)
+
+        # Verificar que es un directorio y el nombre empieza con cl-
+        if os.path.isdir(folder_path) and folder.startswith('cl-'):
+            # Verificar que es un módulo 
+            proyect_name = folder.lstrip('cl-')
+            manifest_file = f"{folder}/{proyect_name}_default/__manifest__.py"
+            if os.path.exists(f"{root_dir}/{manifest_file}"):
+                params['proyect_name'] = proyect_name
+                # Leer el manifiesto y guardarlo
+                with open(f"{root_dir}/{manifest_file}" , 'r',encoding='utf-8') as f:
+                    manif = f.read()
+                params['manifest'] = ast.literal_eval(manif)
+                break
+
+    # si no viene el nombre de la base de datos construir el default
+    if not args.db_name:
+        args.db_name = f"{params['manifest']['name']}_prod"
+
+    # Leer datos del archivo odoo.conf
+    config = configparser.ConfigParser()
+    config.read(f"{args.base}/config/odoo.conf")
+
+    params['db_name'] = config.get("options", "db_name", fallback=args.db_name)
+    params['db_host'] = config.get("options", "db_host", fallback="db")
+    params['db_port'] = config.get("options", "db_port", fallback=5432)
+    params['db_user'] = config.get("options", "db_user", fallback="odoo")
+    params['db_password'] = config.get("options", "db_password", fallback="odoo")
 
 
 def restore_database(args):
     if not args.db_name:
         print("Missing --db-name argument")
 
-    # Obtener acceso a postgres desde odoo.conf
-    credentials = get_credentials(f"{args.base}/config/odoo.conf")
-    try:
-        # Crear conexion a la base de datos
-        conn = psycopg2.connect(
-            user=credentials["db_user"],
-            host=credentials["db_host"],
-            port=credentials["db_port"],
-            password=credentials["db_password"],
-            dbname="postgres",
-        )
-    except Exception as ex:
-        print(
-            "No se puede conectar a la BD esta el servidor postgres corriendo?", str(ex)
-        )
-        exit()
-
     # Obtener el nombre del backup
-    backup_filename = get_backup_filename(args)
+    backup_filename = get_zip_filename(args)
     print(f"Restoring {backup_filename} into Database {args.db_name}")
 
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -362,6 +357,8 @@ if __name__ == "__main__":
 
     print("Database utils V1.4.1")
     print()
+
+    check_parameters(args)
 
     if args.restore:
         restore_database(args)

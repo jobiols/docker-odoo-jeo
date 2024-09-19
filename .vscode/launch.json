@@ -6,12 +6,13 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--db_name", "elektrim_prod", "--base","/odoo/ar/odoo-16.0e/elektrim", "--restore"],
+            "args": ["--base","/odoo/ar/odoo-16.0e/bukito", "--backup"],
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "pythonPath": "${workspaceFolder}/.venv/bin/python",            
         }
     ]
 }

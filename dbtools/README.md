@@ -3,6 +3,19 @@ Docker image with posgres tools to manage backup and restore
     #!/bin/bash
     # --------------------------------------------------------------------------------------
     # Hacer un backup exacto de la base de produccion por defecto
+    # El backup se guarda en BASE/backup_dir no se borran backups viejos
+    # si se hace dentro de docker compose agregar --network compose_default 
+    # --------------------------------------------------------------------------------------
+    BASE="/odoo_ar/odoo-16.0e/lopez"
+    sudo docker run --rm -i \
+        --volume ${BASE}:/base \
+        jobiols/dbtools:1.4.1 \
+            --backup
+
+
+    #!/bin/bash
+    # --------------------------------------------------------------------------------------
+    # Hacer un backup exacto de la base de produccion por defecto
     # El backup se guarda en BASE/backup_dir y se retienen los 3 ultimos días
     # --------------------------------------------------------------------------------------
     BASE="/odoo_ar/odoo-16.0e/lopez"
