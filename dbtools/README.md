@@ -1,6 +1,6 @@
 Docker image with posgres tools to manage backup and restore
 
-    #!/bin/bash
+    #!/bin/bash ! Verificado
     # --------------------------------------------------------------------------------------
     # Hacer un backup exacto de la base de produccion por defecto
     # El backup se guarda en BASE/backup_dir no se borran backups viejos
@@ -9,6 +9,7 @@ Docker image with posgres tools to manage backup and restore
     BASE="/odoo_ar/odoo-16.0e/lopez"
     sudo docker run --rm -i \
         --volume ${BASE}:/base \
+        --link pg-bukito:db \           # Agregar esto si se usa con oe
         jobiols/dbtools:1.4.1 \
             --backup
 
