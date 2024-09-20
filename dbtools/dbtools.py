@@ -24,8 +24,7 @@ resetear_color = "\033[0m"
 
 
 def get_zip_filename(args):
-    """Obtener el nombre del archivo hacia el cual backupear o restaurar
-    """
+    """Obtener el nombre del archivo hacia el cual backupear o restaurar"""
 
     if args.backup:
         # BACKUO
@@ -46,8 +45,7 @@ def get_zip_filename(args):
 
 
 def get_last_backup_file(args):
-    """Obtener el nombre del último backup que se creó
-    """
+    """Obtener el nombre del último backup que se creó"""
     files = glob.glob(f"{args.base}/backup_dir/*.zip")
     if files:
         backup_filename = max(files, key=os.path.getctime)
@@ -56,6 +54,7 @@ def get_last_backup_file(args):
     else:
         print("No backups to restore !")
         exit(1)
+
 
 def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
@@ -137,45 +136,48 @@ def do_restore_database(args, backup_filename):
             )
 
 
-def neutralize_database(args, cur):
+def neutralize_database(args):
     """Neutralizar base de datos luego de hacer el restore"""
 
-    # Obtener la imagen desde el cl
-    sources = f"{args.base}/sources"
-    for root, dirs, files in os.walk(sources):
-        if "__manifest__.py" in files:
-            # Esto se trae todos los manifest que pueden ser montones
-            manifest = f"{root}/__manifest__.py"
-            with open(manifest, "r") as f:
-                man = f.read()
-            # Verifica si tiene la key docker-images y termina
-            data = ast.literal_eval(man)
-            if data.get("docker-images"):
-                break
+    manifest = params["manifest"]
 
-    for image in data.get("docker-images"):
+    for image in manifest.get("docker-images"):
         if "odoo" in image:
             break
     image = image.split()[1]
 
     # Lanzar la imagen y ejecutar neutralize
-    cmd = (
-        "sudo docker run --rm -it --network host "
-        f"-v {args.base}/config:/opt/odoo/etc/ "
-        f"-v {args.base}/data_dir:/opt/odoo/data "
-        f"-v {args.base}/sources:/opt/odoo/custom-addons "
-        f"{image} odoo neutralize -d {args.db_name} "
-    )
+    cmd = [
+        "sudo",
+        "docker",
+        "run",
+        "--rm",
+        "-it",
+        "--network host",
+        "-v",
+        f"{args.base}/config:/opt/odoo/etc/",
+        "-v",
+        f"{args.base}/data_dir:/opt/odoo/data",
+        "-v",
+        f"{args.base}/sources:/opt/odoo/custom-addons",
+        f"{image}",
+        "odoo",
+        "neutralize",
+        "-d",
+        f"{args.db_name}",
+    ]
 
     try:
         result = subprocess.run(
             cmd, shell=True, check=True, text=True, capture_output=True
         )
         print(result.stdout)  # Imprime la salida estándar del comando
+        print(f"RESTORE FIHISHED FOR {args.db_name}", "DATABASE IS NEUTRALIZED")
     except subprocess.CalledProcessError as e:
         print(f"Error al ejecutar el comando: {e}")
         print(e.stdout)  # Mostrar la salida estándar en caso de error
         print(e.stderr)  # Mostrar la salida de error estándar
+        print(f"NEUTRALIZATION {args.db_name}", "FAILED")
 
 
 def backup_database(args):
@@ -300,7 +302,6 @@ def restore_database(args):
     do_restore_database(args, backup_filename)
 
 
-
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
@@ -353,11 +354,12 @@ if __name__ == "__main__":
     if args.restore:
         restore_database(args)
         if args.no_neutralize:
-            print(f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-                  f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}")
+            print(
+                f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
+                f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}"
+            )
         else:
             neutralize_database(args)
-            print(f"RESTORE FIHISHED FOR {args.db_name}", "DATABASE IS NEUTRALIZED")
 
     if args.backup:
         backup_database(args)
