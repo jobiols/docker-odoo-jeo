@@ -19,6 +19,8 @@ import pytz
 
 
 params = {}
+rojo = "\033[91m"
+resetear_color = "\033[0m"
 
 
 def get_zip_filename(args):
@@ -46,7 +48,7 @@ def get_zip_filename(args):
 def get_last_backup_file(args):
     """Obtener el nombre del último backup que se creó
     """
-    files = glob.glob("{args.base}/backup_dir/*.zip")
+    files = glob.glob(f"{args.base}/backup_dir/*.zip")
     if files:
         backup_filename = max(files, key=os.path.getctime)
         print(f"Choosing the latest backup {os.path.basename(backup_filename)}")
@@ -59,7 +61,7 @@ def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
 
     # Path to the filestore folder
-    filestorepath = f"{args.base}/data_dir/filestore/{args.db_name}"
+    filestorepath = f"{args.base}/data_dir/filestore"
 
     # If the filestore folder already exists, delete it
     if os.path.exists(filestorepath):
@@ -73,7 +75,7 @@ def deflate_zip(args, backup_filename, tempdir):
             zip_ref.extractall(path=tempdir)
 
         # copiar el filestore al destino
-        shutil.copytree(f"{tempdir}/filestore", filestorepath)
+        shutil.copytree(f"{tempdir}/filestore/{args.db_name}", filestorepath)
 
     # fix the filestore owner o sea si lo crea le pone root y fallará
     # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
@@ -297,17 +299,6 @@ def restore_database(args):
     create_database(args, cur)
     do_restore_database(args, backup_filename)
 
-    rojo = "\033[91m"
-    resetear_color = "\033[0m"
-
-    if args.no_neutralize:
-        print(
-            f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-            f"WARNING - DATABASE IS NOT NEUTRALIZED - WARNING {resetear_color}"
-        )
-    else:
-        neutralize_database(args, credentials)
-        print(f"RESTORE FIHISHED FOR {args.db_name}, " "DATABASE IS NEUTRALIZED")
 
 
 if __name__ == "__main__":
@@ -361,6 +352,13 @@ if __name__ == "__main__":
 
     if args.restore:
         restore_database(args)
+        if args.no_neutralize:
+            print(f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
+                  f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}")
+        else:
+            neutralize_database(args)
+            print(f"RESTORE FIHISHED FOR {args.db_name}", "DATABASE IS NEUTRALIZED")
+
     if args.backup:
         backup_database(args)
         cleanup_backup_files(args)
