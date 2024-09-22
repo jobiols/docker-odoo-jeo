@@ -17,7 +17,7 @@ sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-18.0/
 sudo rm -rf dist-local-packages dist-packages extra-addons
 
-CD="/mnt/old_so/home/jobiols/git-repos/docker-odoo-jeo/jeo"
+CD="/mnt/old/home/jobiols/git-repos/docker-odoo-jeo/jeo"
 
 set -e
 
