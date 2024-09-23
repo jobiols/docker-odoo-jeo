@@ -74,15 +74,7 @@ def deflate_zip(args, backup_filename, tempdir):
             zip_ref.extractall(path=tempdir)
 
         # copiar el filestore al destino
-        shutil.copytree(f"{tempdir}/filestore/{args.db_name}", filestorepath)
-
-    # fix the filestore owner o sea si lo crea le pone root y fallará
-    # No encuentro manera de ponerle lo mismo que cuando odoo lo crea
-    # uinfo = pwd.getpwnam("systemd-resolve")
-    # ginfo = grp.getgrnam("systemd-journal")
-    # uid = uinfo.pw_uid
-    # gid = ginfo.gr_gid
-    # os.chown(f"{args.base}/data_dir/filestore", uid, gid)
+        shutil.copytree(f"{tempdir}/filestore", f"{filestorepath}/{args.db_name}")
 
     # Return the full path to the database dump file in the temporary directory
     return f"{tempdir}/dump.sql"
@@ -148,7 +140,6 @@ def neutralize_database(args):
 
     # Lanzar la imagen y ejecutar neutralize
     cmd = [
-        "sudo",
         "docker",
         "run",
         "--rm",
