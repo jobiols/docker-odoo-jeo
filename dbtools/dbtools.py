@@ -243,11 +243,10 @@ def check_parameters(args):
     # Recorrer los directorios en la raíz
     for folder in os.listdir(root_dir):
         folder_path = os.path.join(root_dir, folder)
-
         # Verificar que es un directorio y el nombre empieza con cl-
         if os.path.isdir(folder_path) and folder.startswith("cl-"):
             # Verificar que es un módulo
-            proyect_name = folder.lstrip("cl-")
+            proyect_name = folder.removeprefix("cl-")
             manifest_file = f"{folder}/{proyect_name}_default/__manifest__.py"
             if os.path.exists(f"{root_dir}/{manifest_file}"):
                 params["proyect_name"] = proyect_name
