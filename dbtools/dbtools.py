@@ -24,7 +24,7 @@ resetear_color = "\033[0m"
 
 
 def log_time():
-    time = datetime.now()
+    time = datetime.datetime.now()
     return time.strftime('%H:%m:%S')
 
 def get_zip_filename(args):
