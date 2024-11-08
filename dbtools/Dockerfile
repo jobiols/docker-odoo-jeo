@@ -27,7 +27,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 
 RUN pip install pytz
 
-USER 1000:1000
+USER 101:101
 
 ADD dbtools.py /dbtools.py
 

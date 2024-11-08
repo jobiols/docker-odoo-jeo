@@ -31,7 +31,7 @@ def get_zip_filename(args):
     """Obtener el nombre del archivo hacia el cual backupear o restaurar"""
 
     if args.backup:
-        # BACKUO
+        # BACKUP
         if not args.zipfile:
             # no tengo el nombre del backup, lo genero con la hora
             fecha_hora_local = datetime.datetime.now()
@@ -64,21 +64,27 @@ def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
 
     # Path to the filestore folder
-    filestorepath = f"{args.base}/data_dir/filestore"
+    filestorepath = f"{args.base}/data_dir"
 
-    # If the filestore folder already exists, delete it
-    if os.path.exists(filestorepath):
-        shutil.rmtree(filestorepath)
+    # If the filestore backup folder already exists, delete it
+    if os.path.exists(f"{filestorepath}/{args.db_name}"):
+        shutil.rmtree(f"{filestorepath}/{args.db_name}")
 
     # Open the ZIP file
     with ZipFile(backup_filename, "r") as zip_ref:
 
-        # Extraer todo el zip al temporario
-        with ZipFile(backup_filename, "r") as zip_ref:
-            zip_ref.extractall(path=tempdir)
+        # Extraer todo el dump al temporario y el filestore a su lugar
+        with zipfile.ZipFile(backup_filename, "r") as zip_ref:
+            for member in zip_ref.infolist():
+                if member.filename.startswith('filestore'):
+                    zip_ref.extract(member,filestorepath)
+                    extractpath = os.path.join(filestorepath, member.filename)
+                else:
+                    zip_ref.extract(member, tempdir)
+                    extractpath = os.path.join(tempdir, member.filename)
 
-        # copiar el filestore al destino
-        shutil.copytree(f"{tempdir}/filestore", f"{filestorepath}/{args.db_name}")
+                permissions = member.external_attr >> 16
+                os.chmod(extractpath, permissions)
 
     # Return the full path to the database dump file in the temporary directory
     return f"{tempdir}/dump.sql"
@@ -110,6 +116,7 @@ def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
 
     with tempfile.TemporaryDirectory() as tempdir:
+
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
         dump_filename = deflate_zip(args, backup_filename, tempdir)
         with open(dump_filename, "r") as d_filename:
@@ -250,6 +257,10 @@ def check_parameters(args):
                     manif = f.read()
                 params["manifest"] = ast.literal_eval(manif)
                 break
+
+    if not params:
+        print('proyect {proyect_name}_default not found!')
+        exit(1)
 
     # si no viene el nombre de la base de datos construir el default
     if not args.db_name:

@@ -27,22 +27,22 @@ if __name__ == "__main__":
             )
 
             # Esto deberia hacerlo odoo pero no lo hace habria que ver porque
-            # sql = """
-            #     -- From PostgreSQL's point of view, making 'unaccent' immutable is incorrect
-            #     -- because it depends on external data - see
-            #     -- https://www.postgresql.org/message-id/flat/201012021544.oB2FiTn1041521@wwwmaster.postgresql.org#201012021544.oB2FiTn1041521@wwwmaster.postgresql.org
-            #     -- But in the case of Odoo, we consider that those data don't
-            #     -- change in the lifetime of a database. If they do change, all
-            #     -- indexes created with this function become corrupted!
-            #     CREATE EXTENSION IF NOT EXISTS unaccent;
-            #     ALTER FUNCTION unaccent(text) IMMUTABLE;
-            # """
+            sql = """
+                -- From PostgreSQL's point of view, making 'unaccent' immutable is incorrect
+                -- because it depends on external data - see
+                -- https://www.postgresql.org/message-id/flat/201012021544.oB2FiTn1041521@wwwmaster.postgresql.org#201012021544.oB2FiTn1041521@wwwmaster.postgresql.org
+                -- But in the case of Odoo, we consider that those data don't
+                -- change in the lifetime of a database. If they do change, all
+                -- indexes created with this function become corrupted!
+                CREATE EXTENSION IF NOT EXISTS unaccent;
+                ALTER FUNCTION unaccent(text) IMMUTABLE;
+            """
 
-            # print(sql)
+            print(sql)
 
-            # cr = conn.cursor()
-            # cr.execute(sql)
-            # conn.commit()
+            cr = conn.cursor()
+            cr.execute(sql)
+            conn.commit()
 
             error = ""
             break
