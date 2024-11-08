@@ -4,7 +4,7 @@ LABEL Odoo S.A. <info@odoo.com>
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
@@ -54,7 +54,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 RUN npm install -g rtlcss
 
 # Install Odoo
-ENV ODOO_VERSION 14.0
+ENV ODOO_VERSION=14.0
 ENV ODOO_RELEASE=latest
 #ARG ODOO_SHA=dc5475c3c9f9affc2f795be7922efc887d4a5d29
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
@@ -77,7 +77,7 @@ VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 EXPOSE 8069 8072
 
 # Set the default config file
-ENV ODOO_RC /etc/odoo/odoo.conf
+ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
@@ -96,12 +96,12 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
-ENV ETC_DIR /opt/odoo/etc
-ENV DATA_DIR /opt/odoo/data
-ENV LOG_DIR /var/log/odoo
-ENV BKP_DIR /var/odoo/backups
-ENV ADDONS_DIR /opt/odoo/custom-addons
-ENV ODOO_RC ${ETC_DIR}/odoo.conf
+ENV ETC_DIR=/opt/odoo/etc
+ENV DATA_DIR=/opt/odoo/data
+ENV LOG_DIR=/var/log/odoo
+ENV BKP_DIR=/var/odoo/backups
+ENV ADDONS_DIR=/opt/odoo/custom-addons
+ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
