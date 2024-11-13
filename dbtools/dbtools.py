@@ -2,7 +2,7 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
-import io
+import os
 import ast
 import configparser
 import argparse
@@ -15,13 +15,10 @@ import datetime
 from zipfile import ZipFile
 import zipfile
 import shutil
-import pytz
-
 
 params = {}
 rojo = "\033[91m"
 resetear_color = "\033[0m"
-
 
 def log_time():
     time = datetime.datetime.now()
@@ -64,11 +61,10 @@ def deflate_zip(args, backup_filename, tempdir):
     """Unpack backup and filestore"""
 
     # Path to the filestore folder
-    filestorepath = f"{args.base}/data_dir"
+    filestorepath = f"{args.base}/data_dir/filestore"
 
     # If the filestore backup folder already exists, delete it
-    if os.path.exists(f"{filestorepath}/{args.db_name}"):
-        shutil.rmtree(f"{filestorepath}/{args.db_name}")
+    shutil.rmtree(f"{filestorepath}/{args.db_name}", ignore_errors=True)
 
     # Open the ZIP file
     with ZipFile(backup_filename, "r") as zip_ref:
@@ -77,6 +73,8 @@ def deflate_zip(args, backup_filename, tempdir):
         with zipfile.ZipFile(backup_filename, "r") as zip_ref:
             for member in zip_ref.infolist():
                 if member.filename.startswith('filestore'):
+                    parts = member.filename.split('/',1)[1]
+                    member.filename = f"{args.db_name}/{parts}"
                     zip_ref.extract(member,filestorepath)
                     extractpath = os.path.join(filestorepath, member.filename)
                 else:
@@ -99,18 +97,15 @@ def killing_db_connections(args, cur):
         """
     cur.execute(sql)
 
-
 def drop_database(args, cur):
     print(log_time(),"Dropping database if exists")
     sql = f"DROP DATABASE IF EXISTS {args.db_name};"
     cur.execute(sql)
 
-
 def create_database(args, cur):
     print(log_time(),"Creating database")
     sql = f"CREATE DATABASE {args.db_name};"
     cur.execute(sql)
-
 
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
@@ -118,6 +113,7 @@ def do_restore_database(args, backup_filename):
     with tempfile.TemporaryDirectory() as tempdir:
 
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
+        print(log_time(), "Deflating zip")
         dump_filename = deflate_zip(args, backup_filename, tempdir)
         with open(dump_filename, "r") as d_filename:
             # Run psql command as a subprocess, and specify that the dump file should
@@ -126,61 +122,13 @@ def do_restore_database(args, backup_filename):
             print(log_time(),"Restoring Database")
             process = subprocess.run(
                 [
-                    "psql",
-                    "-U",
-                    f"{params.get('db_user','odoo')}",
-                    "-h",
-                    f"{params.get('db_host','db')}",
-                    "-d",
-                    f"{args.db_name}",
+                    "psql", "-U", f"{params.get('db_user','odoo')}",
+                    "-h", f"{params.get('db_host','db')}",
+                    "-d", f"{args.db_name}",
                 ],
                 stdout=subprocess.PIPE,
                 stdin=d_filename,
             )
-
-
-def neutralize_database(args):
-    """Neutralizar base de datos luego de hacer el restore"""
-
-    manifest = params["manifest"]
-
-    for image in manifest.get("docker-images"):
-        if "odoo" in image:
-            break
-    image = image.split()[1]
-
-    # Lanzar la imagen y ejecutar neutralize
-    cmd = [
-        "docker",
-        "run",
-        "--rm",
-        "-it",
-        "--network host",
-        "-v",
-        f"{args.base}/config:/opt/odoo/etc/",
-        "-v",
-        f"{args.base}/data_dir:/opt/odoo/data",
-        "-v",
-        f"{args.base}/sources:/opt/odoo/custom-addons",
-        f"{image}",
-        "odoo",
-        "neutralize",
-        "-d",
-        f"{args.db_name}",
-    ]
-
-    try:
-        result = subprocess.run(
-            cmd, shell=True, check=True, text=True, capture_output=True
-        )
-        print(log_time(),result.stdout)  # Imprime la salida estándar del comando
-        print(log_time(),f"RESTORE FIHISHED FOR {args.db_name}", "DATABASE IS NEUTRALIZED")
-    except subprocess.CalledProcessError as e:
-        print(log_time(),f"Error al ejecutar el comando: {e}")
-        print(log_time(),e.stdout)  # Mostrar la salida estándar en caso de error
-        print(log_time(),e.stderr)  # Mostrar la salida de error estándar
-        print(log_time(),f"NEUTRALIZATION {args.db_name}", "FAILED")
-
 
 def backup_database(args):
     """Hacer un backup de la base de datos"""
@@ -191,12 +139,6 @@ def backup_database(args):
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
-
-        # copiar el filestore a tempdir
-        shutil.copytree(
-            f"{args.base}/data_dir/filestore/{args.db_name}",
-            f"{tempdir}/filestore/{args.db_name}",
-        )
         os.environ["PGPASSWORD"] = params["db_password"]
         # Crear el dump
         try:
@@ -210,8 +152,15 @@ def backup_database(args):
             ]
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
-            print(log_time(),f"error en backup {e}")
-            exit()
+            print(log_time(),f"Error en backup {e}")
+            exit(1)
+
+        # Crear el zip y agregarle el filestore
+        # copiar el filestore a tempdir
+        shutil.copytree(
+            f"{args.base}/data_dir/filestore/{args.db_name}",
+            f"{tempdir}/filestore",
+        )
 
         # zipear y mover al archivo destino
         shutil.make_archive(backup_filename, "zip", tempdir)
@@ -351,20 +300,26 @@ if __name__ == "__main__":
         print(log_time(),"You must issue a backup or a restore command, not both")
         exit()
 
-    print(log_time(),"Database utils V1.4.1")
+    print(log_time(),f"Database utils V1.4.2")
     print()
 
     check_parameters(args)
 
     if args.restore:
         restore_database(args)
-        if args.no_neutralize:
-            print(log_time(),
-                f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-                f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}"
-            )
-        else:
-            neutralize_database(args)
+        print(log_time(),
+            f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
+            f"WARNING - DATABASE IS EXACT {resetear_color}"
+        )
+
+#         if args.no_neutralize:
+#             print(log_time(),
+#                 f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
+#                 f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}"
+#             )
+#         else:
+# #            neutralize_database(args)
+#             pass
 
     if args.backup:
         backup_database(args)
