@@ -32,7 +32,7 @@ def get_zip_filename(args):
         if not args.zipfile:
             # no tengo el nombre del backup, lo genero con la hora
             fecha_hora_local = datetime.datetime.now()
-            zipfile = fecha_hora_local.strftime("bkp_%Y%m%d_%H:%M:%S")
+            zipfile = fecha_hora_local.strftime("bkp_%Y%m%d_%H_%M_%S")
             return f"{args.base}/backup_dir/{zipfile}"
     else:
         # RESTORE
