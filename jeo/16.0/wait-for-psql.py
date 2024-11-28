@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 ALTER FUNCTION unaccent(text) IMMUTABLE;
             """
 
-            print(sql)
+#            print(sql)
 
             cr = conn.cursor()
             cr.execute(sql)
