@@ -7,4 +7,4 @@ if [ "$result" -eq 0 ]; then
 else
     echo "Falló la creación de la imagen"
 fi
-exit $return_code
+exit $result

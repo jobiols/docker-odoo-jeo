@@ -2,6 +2,7 @@
 #
 # Script par hacer Build de las imagenes community
 
+set -e
 
 # limpiar las copias de debug
 cd /odoo/ar/odoo-13.0/
