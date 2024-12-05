@@ -125,6 +125,7 @@ def do_restore_database(args, backup_filename):
                     "psql", "-U", f"{params.get('db_user','odoo')}",
                     "-h", f"{params.get('db_host','db')}",
                     "-d", f"{args.db_name}",
+                    "-p", f"{params.get('db_port', 5432)}",
                 ],
                 stdout=subprocess.PIPE,
                 stdin=d_filename,
@@ -300,7 +301,7 @@ if __name__ == "__main__":
         print(log_time(),"You must issue a backup or a restore command, not both")
         exit()
 
-    print(log_time(),f"Database utils V1.4.2")
+    print(log_time(),f"Database utils V1.4.3")
     print()
 
     check_parameters(args)
