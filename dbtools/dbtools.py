@@ -15,24 +15,32 @@ import datetime
 from zipfile import ZipFile
 import zipfile
 import shutil
+import logging
+
+# Configurar logging para que salga solo en la consola
+logging.basicConfig(
+    level=logging.DEBUG,  # Nivel de log
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Formato del mensaje
+    datefmt='%H:%M:%S'  # Formato personalizado para la hora
+)
 
 params = {}
 rojo = "\033[91m"
 resetear_color = "\033[0m"
 
-def log_time():
-    time = datetime.datetime.now()
-    return time.strftime('%H:%m:%S')
+# def log_time():
+#     time = datetime.datetime.now()
+#     return time.strftime('%H:%m:%S')
 
 def get_zip_filename(args):
-    """Obtener el nombre del archivo hacia el cual backupear o restaurar"""
+    """Crear el nombre del archivo hacia el cual backupear o restaurar"""
 
     if args.backup:
         # BACKUP
         if not args.zipfile:
-            # no tengo el nombre del backup, lo genero con la hora
+            # no tengo el nombre del backup, lo genero con la hora y el cliente
             fecha_hora_local = datetime.datetime.now()
-            zipfile = fecha_hora_local.strftime("bkp_%Y%m%d_%H_%M_%S")
+            zipfile = fecha_hora_local.strftime(f"{args.db_name}_%Y%m%d_%H_%M_%S")
             return f"{args.base}/backup_dir/{zipfile}"
     else:
         # RESTORE
@@ -40,20 +48,21 @@ def get_zip_filename(args):
             # no tengo el nombre del restore, busco el úlimo
             return get_last_backup_file(args)
 
-    # Sea baackup o restore si tengo el parametro lo uso
-
+    # si me viene el parametro args.zipfile ese es el nombre que voy a usar sin
+    # importar si es backup o restore
     return f"{args.base}/backup_dir/{args.zipfile}"
 
 
 def get_last_backup_file(args):
     """Obtener el nombre del último backup que se creó"""
-    files = glob.glob(f"{args.base}/backup_dir/*.zip")
+
+    files = glob.glob(f"{args.base}/backup_dir/{args.db_name}*.zip")
     if files:
         backup_filename = max(files, key=os.path.getctime)
-        print(log_time(),f"Choosing the latest backup {os.path.basename(backup_filename)}")
+        logging.info(f"Choosing the latest backup {os.path.basename(backup_filename)}")
         return backup_filename
     else:
-        print(log_time(),"No backups to restore !")
+        logging.info("No backups to restore !")
         exit(1)
 
 
@@ -89,7 +98,7 @@ def deflate_zip(args, backup_filename, tempdir):
 
 
 def killing_db_connections(args, cur):
-    print(log_time(),f"Killing backend connections to {args.db_name}")
+    logging.info(f"Killing backend connections to {args.db_name}")
     sql = f"""
             SELECT pg_terminate_backend(pid)
             FROM pg_stat_activity
@@ -98,12 +107,12 @@ def killing_db_connections(args, cur):
     cur.execute(sql)
 
 def drop_database(args, cur):
-    print(log_time(),"Dropping database if exists")
+    logging.info("Dropping database if exists")
     sql = f"DROP DATABASE IF EXISTS {args.db_name};"
     cur.execute(sql)
 
 def create_database(args, cur):
-    print(log_time(),"Creating database")
+    logging.info("Creating database")
     sql = f"CREATE DATABASE {args.db_name};"
     cur.execute(sql)
 
@@ -113,13 +122,13 @@ def do_restore_database(args, backup_filename):
     with tempfile.TemporaryDirectory() as tempdir:
 
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
-        print(log_time(), "Deflating zip")
+        logging.info( "Deflating zip")
         dump_filename = deflate_zip(args, backup_filename, tempdir)
         with open(dump_filename, "r") as d_filename:
             # Run psql command as a subprocess, and specify that the dump file should
             # be passed as standard input to the psql process
             os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
-            print(log_time(),"Restoring Database")
+            logging.info("Restoring Database")
             process = subprocess.run(
                 [
                     "psql", "-U", f"{params.get('db_user','odoo')}",
@@ -136,7 +145,7 @@ def backup_database(args):
 
     # Obtener el nombre del restore
     backup_filename = get_zip_filename(args)
-    print(log_time(),f"Backing up database {args.db_name} into file {backup_filename}")
+    logging.info(f"Backing up database {args.db_name} into file {backup_filename}")
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
@@ -153,7 +162,7 @@ def backup_database(args):
             ]
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
-            print(log_time(),f"Error en backup {e}")
+            logging.info(f"Error en backup {e}")
             exit(1)
 
         # Crear el zip y agregarle el filestore
@@ -231,7 +240,7 @@ def restore_database(args):
 
     # Obtener el nombre del backup
     backup_filename = get_zip_filename(args)
-    print(log_time(),f"Restoring {backup_filename} into Database {args.db_name}")
+    logging.info(f"Restoring {backup_filename} into Database {args.db_name}")
 
     try:
         # Crear conexion a la base de datos
@@ -243,7 +252,7 @@ def restore_database(args):
             dbname="postgres",
         )
     except Exception as ex:
-        print(log_time(),
+        logging.info(
             "No se puede conectar a la BD esta el servidor postgres corriendo?", str(ex)
         )
         exit()
@@ -298,31 +307,22 @@ if __name__ == "__main__":
     )
     args = arg_parser.parse_args()
     if args.restore and args.backup:
-        print(log_time(),"You must issue a backup or a restore command, not both")
+        logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    print(log_time(),f"Database utils V1.4.4")
+    logging.info(f"Database utils V1.4.4")
     print()
 
     check_parameters(args)
 
     if args.restore:
         restore_database(args)
-        print(log_time(),
+        logging.info(
             f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
             f"WARNING - DATABASE IS EXACT {resetear_color}"
         )
 
-#         if args.no_neutralize:
-#             print(log_time(),
-#                 f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-#                 f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}"
-#             )
-#         else:
-# #            neutralize_database(args)
-#             pass
-
     if args.backup:
         backup_database(args)
         cleanup_backup_files(args)
-        print(log_time(),"database backed up")
+        logging.info("database backed up")
