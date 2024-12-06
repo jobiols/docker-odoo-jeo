@@ -15,3 +15,4 @@ markdown
 meli @ git+https://github.com/mercadolibre/python-sdk.git@09406bd544b974b379fea4818bd1040c7f147a40
 
 unrar
+openpyxl
