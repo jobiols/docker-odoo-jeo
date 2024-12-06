@@ -301,7 +301,7 @@ if __name__ == "__main__":
         print(log_time(),"You must issue a backup or a restore command, not both")
         exit()
 
-    print(log_time(),f"Database utils V1.4.3")
+    print(log_time(),f"Database utils V1.4.4")
     print()
 
     check_parameters(args)
