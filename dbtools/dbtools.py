@@ -55,6 +55,7 @@ def get_zip_filename(args):
 
 def get_last_backup_file(args):
     """Obtener el nombre del último backup que se creó"""
+    logging.info(f"base {args.base} db_name{args.db_name}")
 
     files = glob.glob(f"{args.base}/backup_dir/{args.db_name}*.zip")
     for file in files:
