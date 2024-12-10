@@ -57,6 +57,8 @@ def get_last_backup_file(args):
     """Obtener el nombre del último backup que se creó"""
 
     files = glob.glob(f"{args.base}/backup_dir/{args.db_name}*.zip")
+    for file in files:
+        logging.info(f"Existing Backup {file}")
     if files:
         backup_filename = max(files, key=os.path.getctime)
         logging.info(f"Choosing the latest backup {os.path.basename(backup_filename)}")
