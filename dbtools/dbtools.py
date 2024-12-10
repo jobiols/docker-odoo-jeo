@@ -42,9 +42,15 @@ def get_zip_filename(args):
             fecha_hora_local = datetime.datetime.now()
             zipfile = fecha_hora_local.strftime(f"{args.db_name}_%Y%m%d_%H_%M_%S")
             return f"{args.base}/backup_dir/{zipfile}"
+        else:
+            # si tengo el nombre del backup es un error
+            logging.error('Do not use --db-name in a backup')
+            exit(1)
     else:
         # RESTORE
-        if not args.zipfile:
+        if args.zipfile:
+            return zipfile
+        else:
             # no tengo el nombre del restore, busco el úlimo
             return get_last_backup_file(args)
 
@@ -55,11 +61,7 @@ def get_zip_filename(args):
 
 def get_last_backup_file(args):
     """Obtener el nombre del último backup que se creó"""
-    logging.info(f"base {args.base} db_name{args.db_name}")
-
-    files = glob.glob(f"{args.base}/backup_dir/{args.db_name}*.zip")
-    for file in files:
-        logging.info(f"Existing Backup {file}")
+    files = glob.glob(f"{args.base}/backup_dir/*.zip")
     if files:
         backup_filename = max(files, key=os.path.getctime)
         logging.info(f"Choosing the latest backup {os.path.basename(backup_filename)}")
@@ -180,7 +182,8 @@ def backup_database(args):
 
 
 def cleanup_backup_files(args):
-    """Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"""
+    """Elimiar los backups antiguos que tengan más de args.days_to_keep de
+    antiguedad y que empiecen con el nombre de la base"""
 
     # sin el parametro termina
     if not args.days_to_keep:
@@ -190,12 +193,13 @@ def cleanup_backup_files(args):
     max_age = datetime.timedelta(days=int(args.days_to_keep))
     backup_dir = f"{args.base}/backup_dir"
     for file in os.listdir(backup_dir):
-        filepath = os.path.join(backup_dir, file)
-        if os.path.isfile(filepath):
-            file_date = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
-            file_age = actual_date - file_date
-            if file_age > max_age:
-                os.remove(filepath)
+        if file.startswith(args.db_name):
+            filepath = os.path.join(backup_dir, file)
+            if os.path.isfile(filepath):
+                file_date = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
+                file_age = actual_date - file_date
+                if file_age > max_age:
+                    os.remove(filepath)
 
 
 def check_parameters(args):
@@ -247,6 +251,9 @@ def restore_database(args):
 
     try:
         # Crear conexion a la base de datos
+        #TODO Quitar esto para produccion
+        #params['db_host'] = 'localhost'
+
         conn = psycopg2.connect(
             user=params["db_user"],
             host=params["db_host"],

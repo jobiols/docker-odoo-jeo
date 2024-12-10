@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--base","/odoo/ar/odoo-16.0e/maverick", "--restore"],
+            "args": ["--base","/odoo/ar/odoo-16.0e/claretiana", "--restore", "--db-name", "dpy_test_1111"],
             "type": "python",
             "request": "launch",
             "program": "${file}",
