@@ -15,33 +15,47 @@ import datetime
 from zipfile import ZipFile
 import zipfile
 import shutil
+import logging
+
+# Configurar logging para que salga solo en la consola
+logging.basicConfig(
+    level=logging.DEBUG,  # Nivel de log
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Formato del mensaje
+    datefmt='%H:%M:%S'  # Formato personalizado para la hora
+)
 
 params = {}
 rojo = "\033[91m"
 resetear_color = "\033[0m"
 
-def log_time():
-    time = datetime.datetime.now()
-    return time.strftime('%H:%m:%S')
+# def log_time():
+#     time = datetime.datetime.now()
+#     return time.strftime('%H:%m:%S')
 
 def get_zip_filename(args):
-    """Obtener el nombre del archivo hacia el cual backupear o restaurar"""
+    """Crear el nombre del archivo hacia el cual backupear o restaurar"""
 
     if args.backup:
         # BACKUP
         if not args.zipfile:
-            # no tengo el nombre del backup, lo genero con la hora
+            # no tengo el nombre del backup, lo genero con la hora y el cliente
             fecha_hora_local = datetime.datetime.now()
-            zipfile = fecha_hora_local.strftime("bkp_%Y%m%d_%H_%M_%S")
+            zipfile = fecha_hora_local.strftime(f"{args.db_name}_%Y%m%d_%H_%M_%S")
             return f"{args.base}/backup_dir/{zipfile}"
+        else:
+            # si tengo el nombre del backup es un error
+            logging.error('Do not use --db-name in a backup')
+            exit(1)
     else:
         # RESTORE
-        if not args.zipfile:
+        if args.zipfile:
+            return zipfile
+        else:
             # no tengo el nombre del restore, busco el úlimo
             return get_last_backup_file(args)
 
-    # Sea baackup o restore si tengo el parametro lo uso
-
+    # si me viene el parametro args.zipfile ese es el nombre que voy a usar sin
+    # importar si es backup o restore
     return f"{args.base}/backup_dir/{args.zipfile}"
 
 
@@ -50,10 +64,10 @@ def get_last_backup_file(args):
     files = glob.glob(f"{args.base}/backup_dir/*.zip")
     if files:
         backup_filename = max(files, key=os.path.getctime)
-        print(log_time(),f"Choosing the latest backup {os.path.basename(backup_filename)}")
+        logging.info(f"Choosing the latest backup {os.path.basename(backup_filename)}")
         return backup_filename
     else:
-        print(log_time(),"No backups to restore !")
+        logging.info("No backups to restore !")
         exit(1)
 
 
@@ -89,7 +103,7 @@ def deflate_zip(args, backup_filename, tempdir):
 
 
 def killing_db_connections(args, cur):
-    print(log_time(),f"Killing backend connections to {args.db_name}")
+    logging.info(f"Killing backend connections to {args.db_name}")
     sql = f"""
             SELECT pg_terminate_backend(pid)
             FROM pg_stat_activity
@@ -98,12 +112,12 @@ def killing_db_connections(args, cur):
     cur.execute(sql)
 
 def drop_database(args, cur):
-    print(log_time(),"Dropping database if exists")
+    logging.info("Dropping database if exists")
     sql = f"DROP DATABASE IF EXISTS {args.db_name};"
     cur.execute(sql)
 
 def create_database(args, cur):
-    print(log_time(),"Creating database")
+    logging.info("Creating database")
     sql = f"CREATE DATABASE {args.db_name};"
     cur.execute(sql)
 
@@ -113,13 +127,13 @@ def do_restore_database(args, backup_filename):
     with tempfile.TemporaryDirectory() as tempdir:
 
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
-        print(log_time(), "Deflating zip")
+        logging.info( "Deflating zip")
         dump_filename = deflate_zip(args, backup_filename, tempdir)
         with open(dump_filename, "r") as d_filename:
             # Run psql command as a subprocess, and specify that the dump file should
             # be passed as standard input to the psql process
             os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
-            print(log_time(),"Restoring Database")
+            logging.info("Restoring Database")
             process = subprocess.run(
                 [
                     "psql", "-U", f"{params.get('db_user','odoo')}",
@@ -136,7 +150,7 @@ def backup_database(args):
 
     # Obtener el nombre del restore
     backup_filename = get_zip_filename(args)
-    print(log_time(),f"Backing up database {args.db_name} into file {backup_filename}")
+    logging.info(f"Backing up database {args.db_name} into file {backup_filename}")
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
@@ -153,7 +167,7 @@ def backup_database(args):
             ]
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
-            print(log_time(),f"Error en backup {e}")
+            logging.info(f"Error en backup {e}")
             exit(1)
 
         # Crear el zip y agregarle el filestore
@@ -168,7 +182,8 @@ def backup_database(args):
 
 
 def cleanup_backup_files(args):
-    """Elimiar los backups antiguos que tengan más de args.days_to_keep de antiguedad"""
+    """Elimiar los backups antiguos que tengan más de args.days_to_keep de
+    antiguedad y que empiecen con el nombre de la base"""
 
     # sin el parametro termina
     if not args.days_to_keep:
@@ -178,12 +193,13 @@ def cleanup_backup_files(args):
     max_age = datetime.timedelta(days=int(args.days_to_keep))
     backup_dir = f"{args.base}/backup_dir"
     for file in os.listdir(backup_dir):
-        filepath = os.path.join(backup_dir, file)
-        if os.path.isfile(filepath):
-            file_date = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
-            file_age = actual_date - file_date
-            if file_age > max_age:
-                os.remove(filepath)
+        if file.startswith(args.db_name):
+            filepath = os.path.join(backup_dir, file)
+            if os.path.isfile(filepath):
+                file_date = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
+                file_age = actual_date - file_date
+                if file_age > max_age:
+                    os.remove(filepath)
 
 
 def check_parameters(args):
@@ -231,10 +247,13 @@ def restore_database(args):
 
     # Obtener el nombre del backup
     backup_filename = get_zip_filename(args)
-    print(log_time(),f"Restoring {backup_filename} into Database {args.db_name}")
+    logging.info(f"Restoring {backup_filename} into Database {args.db_name}")
 
     try:
         # Crear conexion a la base de datos
+        #TODO Quitar esto para produccion
+        #params['db_host'] = 'localhost'
+
         conn = psycopg2.connect(
             user=params["db_user"],
             host=params["db_host"],
@@ -243,7 +262,7 @@ def restore_database(args):
             dbname="postgres",
         )
     except Exception as ex:
-        print(log_time(),
+        logging.info(
             "No se puede conectar a la BD esta el servidor postgres corriendo?", str(ex)
         )
         exit()
@@ -298,31 +317,22 @@ if __name__ == "__main__":
     )
     args = arg_parser.parse_args()
     if args.restore and args.backup:
-        print(log_time(),"You must issue a backup or a restore command, not both")
+        logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    print(log_time(),f"Database utils V1.4.3")
+    logging.info(f"Database utils V1.4.4")
     print()
 
     check_parameters(args)
 
     if args.restore:
         restore_database(args)
-        print(log_time(),
+        logging.info(
             f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
             f"WARNING - DATABASE IS EXACT {resetear_color}"
         )
 
-#         if args.no_neutralize:
-#             print(log_time(),
-#                 f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-#                 f"WARNING - DATABASE IS EXACT - WARNING {resetear_color}"
-#             )
-#         else:
-# #            neutralize_database(args)
-#             pass
-
     if args.backup:
         backup_database(args)
         cleanup_backup_files(args)
-        print(log_time(),"database backed up")
+        logging.info("database backed up")
