@@ -15,8 +15,8 @@ RUN pip install --no-cache-dir psycopg2-binary pytz
 ADD dbtools.py /dbtools.py
 
 # Crear usuario
-RUN addgroup -g 1100 appgroup && \
-    adduser -D -u 1100 -G appgroup odoo
+RUN addgroup -g 1100 odoo && \
+    adduser -D -u 1100 -G odoo odoo
 
 USER 1100:1100
 
