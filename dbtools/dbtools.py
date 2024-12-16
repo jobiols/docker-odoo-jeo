@@ -2,6 +2,7 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
+import time
 import os
 import ast
 import configparser
@@ -27,10 +28,6 @@ logging.basicConfig(
 params = {}
 rojo = "\033[91m"
 resetear_color = "\033[0m"
-
-# def log_time():
-#     time = datetime.datetime.now()
-#     return time.strftime('%H:%m:%S')
 
 def get_zip_filename(args):
     """Crear el nombre del archivo hacia el cual backupear o restaurar"""
@@ -95,6 +92,7 @@ def deflate_zip(args, backup_filename, tempdir):
                     zip_ref.extract(member, tempdir)
                     extractpath = os.path.join(tempdir, member.filename)
 
+                # Restaurar los permisos correspondientes a los archivos
                 permissions = member.external_attr >> 16
                 os.chmod(extractpath, permissions)
 
@@ -146,9 +144,9 @@ def do_restore_database(args, backup_filename):
             )
 
 def backup_database(args):
-    """Hacer un backup de la base de datos"""
+    """Hacer un backup de la base de datos, en args viene los datos necesarios"""
 
-    # Obtener el nombre del restore
+    # Obtener el nombre del archivo zip que contendrá el filestore y el dump
     backup_filename = get_zip_filename(args)
     logging.info(f"Backing up database {args.db_name} into file {backup_filename}")
 
@@ -167,19 +165,38 @@ def backup_database(args):
             ]
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
-            logging.info(f"Error en backup {e}")
+            logging.error(f"Error en backup {e}")
             exit(1)
 
-        # Crear el zip y agregarle el filestore
-        # copiar el filestore a tempdir
-        shutil.copytree(
-            f"{args.base}/data_dir/filestore/{args.db_name}",
-            f"{tempdir}/filestore",
-        )
+        # Copiar el arbol de filestore al directorio temporario
+        source = f"{args.base}/data_dir/filestore/{args.db_name}"
+        destination = f"{tempdir}/filestore"
+        try:
+            subprocess.run(['cp','-a', source,destination],check=True)
+        except subprocess.CalledProcessError as e:
+           logging.error(f"Error en copiado de filestore {e}")
+           exit(1)
 
-        # zipear y mover al archivo destino
-        shutil.make_archive(backup_filename, "zip", tempdir)
+        # Crear el ZIP preservando los atributos
+        try:
+            with zipfile.ZipFile(f"{backup_filename}.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(tempdir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, tempdir)  # Path relativo dentro del zip
 
+                        # Obtener atributos y permisos del archivo
+                        stat = os.stat(file_path)
+                        info = zipfile.ZipInfo(arcname)
+                        info.date_time = time.localtime(stat.st_mtime)[:6]
+                        info.external_attr = (stat.st_mode & 0xFFFF) << 16  # Preservar permisos
+
+                        # Añadir el archivo al ZIP
+                        with open(file_path, "rb") as f:
+                            zipf.writestr(info, f.read())
+        except Exception as e:
+            logging.error(f"Error creando archivo ZIP: {e}")
+            exit(1)
 
 def cleanup_backup_files(args):
     """Elimiar los backups antiguos que tengan más de args.days_to_keep de
@@ -262,9 +279,7 @@ def restore_database(args):
             dbname="postgres",
         )
     except Exception as ex:
-        logging.info(
-            "No se puede conectar a la BD esta el servidor postgres corriendo?", str(ex)
-        )
+        logging.info(f"No se puede conectar a la BD, Error {ex}")
         exit()
 
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -320,7 +335,7 @@ if __name__ == "__main__":
         logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    logging.info(f"Database utils V1.4.4")
+    logging.info(f"Database utils V1.4.5")
     print()
 
     check_parameters(args)
