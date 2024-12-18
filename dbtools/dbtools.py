@@ -111,12 +111,12 @@ def killing_db_connections(args, cur):
 
 def drop_database(args, cur):
     logging.info("Dropping database if exists")
-    sql = f"DROP DATABASE IF EXISTS {args.db_name};"
+    sql = f'DROP DATABASE IF EXISTS "{args.db_name}";'
     cur.execute(sql)
 
 def create_database(args, cur):
     logging.info("Creating database")
-    sql = f"CREATE DATABASE {args.db_name};"
+    sql = f'CREATE DATABASE "{args.db_name}";'
     cur.execute(sql)
 
 def do_restore_database(args, backup_filename):
@@ -335,7 +335,7 @@ if __name__ == "__main__":
         logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    logging.info(f"Database utils V1.4.5")
+    logging.info(f"Database utils V1.4.6")
     print()
 
     check_parameters(args)

@@ -33,7 +33,6 @@ RUN apt-get update && \
         python3-slugify \
         python3-vobject \
         python3-watchdog \
-        python3-xlrd \
         python3-xlwt \
         xz-utils && \
     if [ -z "${TARGETARCH}" ]; then \
@@ -149,4 +148,4 @@ RUN chmod -R 777 /usr/local/lib/python3.9/dist-packages/pyafipws
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
-USER odoo
+#USER odoo
