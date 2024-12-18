@@ -4,7 +4,7 @@ LABEL Odoo S.A. <info@odoo.com>
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Use backports to avoid install some libs with pip
 RUN echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/backports.list
@@ -52,7 +52,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' > /etc
         && rm -rf /var/lib/apt/lists/*
 
 # Install Odoo
-ENV ODOO_VERSION 11.0
+ENV ODOO_VERSION=11.0
 ENV ODOO_RELEASE=latest
 #ARG ODOO_SHA=e21c34a263785eea09babd7a0d876ba05c841935
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \

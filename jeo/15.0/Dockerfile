@@ -4,7 +4,7 @@ LABEL maintainer="Odoo S.A. <info@odoo.com>"
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update && \
@@ -54,8 +54,8 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 RUN npm install -g rtlcss
 
 # Install Odoo
-ENV ODOO_VERSION 15.0
-ARG ODOO_RELEASE=20241218
+ENV ODOO_VERSION=15.0
+ARG ODOO_RELEASE=20241210
 #ARG ODOO_SHA=f99974a7dfc4862e348ef87e15766efcd2b777e2
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \

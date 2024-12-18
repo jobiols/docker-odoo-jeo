@@ -25,7 +25,7 @@ RUN set -x; \
         && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # Install Odoo
-ENV ODOO_VERSION 9.0
+ENV ODOO_VERSION=9.0
 # revertimos por error con Unknown path: /base/rng/view.rng y repositorio enterprise no en ultima version
 ENV ODOO_RELEASE latest
 RUN set -x; \

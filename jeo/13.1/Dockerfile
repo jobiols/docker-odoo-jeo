@@ -4,7 +4,7 @@ LABEL Odoo S.A. <info@odoo.com>
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 RUN apt-get update \
@@ -53,7 +53,7 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > /etc/
 RUN npm install -g rtlcss
 
 # Install Odoo
-ENV ODOO_VERSION 13.0
+ENV ODOO_VERSION=13.0
 ENV ODOO_RELEASE=latest
 #ARG ODOO_SHA=6bfc680c42e4fd310281712c3467902d8db8cb56
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
