@@ -1,81 +1,36 @@
 Docker image with posgres tools to manage backup and restore
 
-    #!/bin/bash ! Verificado
+    #!/bin/bash
     # --------------------------------------------------------------------------------------
-    # Hacer un backup exacto de la base de produccion por defecto
-    # El backup se guarda en BASE/backup_dir no se borran backups viejos
-    # si se hace dentro de docker compose agregar --network compose_default 
+    # Hacer un backup de la base de produccion por defecto (client_default)
+    # El backup se guarda en BASE/backup_dir se mantienen 3 dias
+    # El archivo zip se obtiene de BASE/backup_dir
+    # si se hace con oe agregar cambiar  --network compose_default por --link pg-bukito:db
+    # Si no se quiere borrar ningun backup omitir --days-to-keep
     # --------------------------------------------------------------------------------------
     BASE="/odoo_ar/odoo-16.0e/lopez"
-    sudo docker run --rm -i \
-        --volume ${BASE}:/base \
-        --link pg-bukito:db \           # Agregar esto si se usa con oe
-        jobiols/dbtools:1.4.1 \
-            --backup
 
+    sudo docker run --rm \
+        --volume ${BASE}:/base \
+        --network compose_default
+        --days-to-keep 3 \
+        jobiols/dbtools:1.4.4 \
+        --backup
 
     #!/bin/bash
     # --------------------------------------------------------------------------------------
-    # Hacer un backup exacto de la base de produccion por defecto
-    # El backup se guarda en BASE/backup_dir y se retienen los 3 ultimos días
+    # Hacer un restore de la base de produccion el archivo de backup se toma
+    # de BASE/backup_dir buscando el archivo más nuevo, el nombre de la BD a restaurar
+    # es el default
     # --------------------------------------------------------------------------------------
     BASE="/odoo_ar/odoo-16.0e/lopez"
-    sudo docker run --rm -i \
-        --network compose_default \
-        --volume ${BASE}:/base \
-        jobiols/dbtools:1.4.1 \
-            --days-to-keep 3 \
-            --backup
+    db_name=rubi_test_1209
 
-    #!/bin/bash
-    # --------------------------------------------------------------------------------------
-    # Hacer un backup exacto de la base my_database
-    # El backup se guarda en BASE/backup_dir y se retienen los 3 ultimos días
-    # --------------------------------------------------------------------------------------
-    BASE="/odoo_ar/odoo-16.0e/lopez"
-    sudo docker run --rm -i \
-        --network compose_default \
+    sudo docker run --rm -it \
         --volume ${BASE}:/base \
-        jobiols/dbtools:1.4.1 \
-            --db-name my_database \
-            --days-to-keep 3 \
-            --backup
+        --network compose_default
+        --link postgres:db \
+        jobiols/dbtools:1.4.4 \
+        --db-name $db_name
+        --restore
 
-    # --------------------------------------------------------------------------------------
-    # Hacer un backup exacto de la base my_database
-    # El backup se guarda en BASE/backup_dir no se borra ningun backup antiguo
-    # El nombre del archivo de restore es my_backup
-    # --------------------------------------------------------------------------------------
-    BASE="/odoo_ar/odoo-16.0e/lopez"
-    sudo docker run --rm -i \
-        --network compose_default \
-        --volume ${BASE}:/base \
-        jobiols/dbtools:1.4.1 \
-            --db-name my_database
-            --zipfile my_backup
-            --backup
-
-    #!/bin/bash
-    # --------------------------------------------------------------------------------------
-    # Hacer un restore exacto de la base de produccion el archivo de backup se toma
-    # de BASE/backup_dir buscando el archivo más nuevo, el nobre de la BD a restaurar
-    # es el default, el restore es exacto sin neutralización.
-    # --------------------------------------------------------------------------------------
-    BASE="/odoo_ar/odoo-16.0e/lopez"
-    sudo docker run --rm -i \
-        --network compose_default \
-        --volume ${BASE}:/base \
-        jobiols/dbtools:1.4.1 \
-            --no-neutralize \
-            --restore
-
-    optional arguments:
-    -h, --help         show this help message and exit
-    --base BASE        Proyect dir, (i.e. /odoo_ar/odoo-16.0e/bukito)
-    --db_name DB_NAME  Database name to restore into or tu backup from
-    --zipfile ZIPFILE  The backup filename. On restore, defaults to the last
-                        backup file. On backup, defaults to a filename with a
-                        timestamp
-    --restore          Restore database
-    --backup           Backup database
-    --no-neutralize    Make an exact database (no neutralize)

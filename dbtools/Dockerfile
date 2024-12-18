@@ -1,34 +1,23 @@
-FROM debian:bullseye-slim
+FROM python:3.11-alpine
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
-RUN apt-get update \
-        && apt-get install -y --no-install-recommends \
+# Instalar dependencias
+RUN apk add --no-cache \
+            postgresql-client \
             ca-certificates \
             gnupg \
-            python3-pip \
             zip \
             unzip
 
-RUN pip install psycopg2-binary
-
-# install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-    && GNUPGHOME="$(mktemp -d)" \
-    && export GNUPGHOME \
-    && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-    && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-    && gpgconf --kill all \
-    && rm -rf "$GNUPGHOME" \
-    && apt-get update  \
-    && apt-get install --no-install-recommends -y postgresql-client \
-    && rm -f /etc/apt/sources.list.d/pgdg.list \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN pip install pytz
-
-USER 101:101
+# Instalar paquetes de Python
+RUN pip install --no-cache-dir psycopg2-binary pytz
 
 ADD dbtools.py /dbtools.py
+
+# Crear usuario
+RUN addgroup -g 1100 odoo && \
+    adduser -D -u 1100 -G odoo odoo
+
+USER 1100:1100
 
 ENTRYPOINT ["/dbtools.py"]
