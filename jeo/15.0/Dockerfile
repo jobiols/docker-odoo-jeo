@@ -55,7 +55,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION=15.0
-ARG ODOO_RELEASE=20241219
+ARG ODOO_RELEASE=20241224
 #ARG ODOO_SHA=f99974a7dfc4862e348ef87e15766efcd2b777e2
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -77,7 +77,7 @@ VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 EXPOSE 8069 8071 8072
 
 # Set the default config file
-ENV ODOO_RC /etc/odoo/odoo.conf
+ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
@@ -101,7 +101,7 @@ ENV DATA_DIR /opt/odoo/data
 ENV LOG_DIR /var/log/odoo
 ENV BKP_DIR /var/odoo/backups
 ENV ADDONS_DIR /opt/odoo/custom-addons
-ENV ODOO_RC ${ETC_DIR}/odoo.conf
+ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \

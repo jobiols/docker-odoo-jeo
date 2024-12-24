@@ -76,7 +76,7 @@ VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 EXPOSE 8069 8072
 
 # Set the default config file
-ENV ODOO_RC /etc/odoo/odoo.conf
+ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
@@ -100,7 +100,7 @@ ENV DATA_DIR /opt/odoo/data
 ENV LOG_DIR /var/log/odoo
 ENV BKP_DIR /var/odoo/backups
 ENV ADDONS_DIR /opt/odoo/custom-addons
-ENV ODOO_RC ${ETC_DIR}/odoo.conf
+ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \

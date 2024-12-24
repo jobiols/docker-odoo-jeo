@@ -74,7 +74,7 @@ VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 EXPOSE 8069 8072
 
 # Set the default config file
-ENV ODOO_RC /etc/odoo/odoo.conf
+ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
@@ -169,7 +169,7 @@ RUN    mkdir -p /opt/odoo \
     && chown -R odoo.odoo /opt/odoo
 
 # Reset the default config file
-ENV ODOO_RC /opt/odoo/etc/odoo.conf
+ENV ODOO_RC=/opt/odoo/etc/odoo.conf
 
 COPY ./resources/ /opt/odoo/resources/
 
