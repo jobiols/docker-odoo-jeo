@@ -127,7 +127,7 @@ RUN apt-get install python-dev libssl-dev swig -y -qq
 COPY ./requirements /req
 RUN pip3 install -r /req/adhoc-odoo-argentina-ce.txt
 RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/database-autobackup.txt
+# RUN pip3 install -r /req/database-autobackup.txt quitamos autobackup
 RUN pip3 install -r /req/odoo-etl.txt
 RUN pip3 install -r /req/varios.txt
 RUN rm -r /req
