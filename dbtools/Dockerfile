@@ -1,4 +1,4 @@
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 # Instalar dependencias
@@ -7,17 +7,13 @@ RUN apk add --no-cache \
             ca-certificates \
             gnupg \
             zip \
-            unzip
+            unzip && \
+    pip install --no-cache-dir psycopg2-binary==2.9.10 pytz==2024.2
 
-# Instalar paquetes de Python
-RUN pip install --no-cache-dir psycopg2-binary pytz
+# Establecer directorio de trabajo
+WORKDIR /app
 
-ADD dbtools.py /dbtools.py
+ADD dbtools.py .
 
-# Crear usuario
-# RUN addgroup -g 1100 odoo && \
-#     adduser -D -u 1100 -G odoo odoo
-
-# USER 1100:1100
-
-ENTRYPOINT ["/dbtools.py"]
+# Configurar el script como punto de entrada
+ENTRYPOINT ["python", "/app/dbtools.py"]
