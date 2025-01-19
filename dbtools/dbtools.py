@@ -38,7 +38,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
 
 # Configurar logging para que salga solo en la consola
 logging.basicConfig(
-    level=logging.DEBUG,  # Nivel de log
+    level=logging.INFO,  # Nivel de log
     format="%(asctime)s - %(levelname)s - %(message)s",  # Formato del mensaje
     datefmt="%H:%M:%S",  # Formato personalizado para la hora
     handlers=[ColorizingStreamHandler()]  # Usar el handler personalizado
@@ -184,15 +184,13 @@ def do_restore_database(args, backup_filename):
                         f"{params.get('db_port', 5432)}",
                     ],
                     stdout=subprocess.DEVNULL,  # No capturar stdout
-                    stderr=subprocess.DEVNULL,  # No capturar stderr
+                    stderr=subprocess.PIPE,
                     stdin=d_filename,
                     text=True,
                 )
                 if process.returncode != 0:
                     logging.error(f"Error restoring database: {process.stderr}")
                     exit(1)
-                else:
-                    logging.info(f"Database restored successfully: {process.stdout}")
             except FileNotFoundError:
                 logging.error(
                     "The 'psql' command was not found. Ensure PostgreSQL is installed and in the PATH."
@@ -260,7 +258,7 @@ def backup_database(args):
         try:
             # Copiar el backup al directorio final
             shutil.move(f"{tempdir}/backup.zip", backup_filename)
-            logging.info(f"Backup moved successfully to {backup_filename}")
+            logging.info(f"Backup successfully created {backup_filename}")
         except FileNotFoundError as e:
             logging.error(
                 f"File not found: {e}. Ensure the source file exists before moving."
@@ -416,9 +414,9 @@ if __name__ == "__main__":
 
     if args.restore:
         restore_database(args)
-        logging.info(f"Database {args.db_name} was restored")
+        logging.info(f"Database {args.db_name} successfully restored")
 
     if args.backup:
         backup_database(args)
         cleanup_backup_files(args)
-        logging.info("Database backed up")
+        logging.info(f"Database backed {args.db_name} successfully backed up")
