@@ -12,7 +12,7 @@ import tempfile
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import os, glob
-import datetime
+from datetime import datetime
 from zipfile import ZipFile
 import zipfile
 import shutil
@@ -30,13 +30,13 @@ rojo = "\033[91m"
 resetear_color = "\033[0m"
 
 def get_zip_filename(args):
-    """Crear el nombre del archivo hacia el cual backupear o restaurar"""
+    """Crear el nombre del archivo hacia el cual hacer backup o restore"""
 
     if args.backup:
         # BACKUP
         if not args.zipfile:
             # no tengo el nombre del backup, lo genero con la hora y el cliente
-            fecha_hora_local = datetime.datetime.now()
+            fecha_hora_local = datetime.now()
             zipfile = fecha_hora_local.strftime(f"{args.db_name}_%Y%m%d_%H_%M_%S")
             return f"{args.base}/backup_dir/{zipfile}"
         else:
@@ -171,21 +171,34 @@ def backup_database(args):
 
         logging.info(f"Dump file created")
 
+
+
+
         # Copiar el arbol de filestore al directorio temporario
         source = f"{args.base}/data_dir/filestore/{args.db_name}"
-        destination = f"{tempdir}/filestore"
-        try:
-            subprocess.run(['cp','-a', source,destination],check=True)
-        except subprocess.CalledProcessError as e:
-           logging.error(f"Error en copiado de filestore {e}")
-           exit(1)
+        # destination = f"{tempdir}/filestore"
+        # try:
+        #     subprocess.run(['cp','-a', source,destination],check=True)
+        # except subprocess.CalledProcessError as e:
+        #    logging.error(f"Error en copiado de filestore {e}")
+        #    exit(1)
 
-        logging.info(f"filestore copied filestore to {destination}")
+
+
+
+#        logging.info(f"filestore copied filestore to {destination}")
 
         # Crear el ZIP preservando los atributos
         try:
             with zipfile.ZipFile(f"{backup_filename}.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
-                for root, dirs, files in os.walk(tempdir):
+                # Generar el dump de la BD y agregarlo directamente al ZIP
+
+                # Agregar el dump al ZIP
+                zipf.write(tempdir, "dump.sql")
+                logging.info(f"Database dump added to ZIP")
+
+                logging.info(f"Adding files from {source} to ZIP")
+                for root, dirs, files in os.walk(source):
                     for file in files:
                         file_path = os.path.join(root, file)
                         arcname = os.path.relpath(file_path, tempdir)  # Path relativo dentro del zip
@@ -212,14 +225,14 @@ def cleanup_backup_files(args):
     if not args.days_to_keep:
         return
 
-    actual_date = datetime.datetime.now()
+    actual_date = datetime.now()
     max_age = datetime.timedelta(days=int(args.days_to_keep))
     backup_dir = f"{args.base}/backup_dir"
     for file in os.listdir(backup_dir):
         if file.startswith(args.db_name):
             filepath = os.path.join(backup_dir, file)
             if os.path.isfile(filepath):
-                file_date = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
+                file_date = datetime.fromtimestamp(os.path.getmtime(filepath))
                 file_age = actual_date - file_date
                 if file_age > max_age:
                     os.remove(filepath)
@@ -338,7 +351,6 @@ if __name__ == "__main__":
         exit()
 
     logging.info(f"Database utils V1.4.6")
-    print()
 
     check_parameters(args)
 
