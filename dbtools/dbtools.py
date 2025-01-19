@@ -13,8 +13,7 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import os, glob
 from datetime import datetime
-from zipfile import ZipFile
-import zipfile
+from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
 import logging
 
@@ -81,7 +80,7 @@ def deflate_zip(args, backup_filename, tempdir):
     with ZipFile(backup_filename, "r") as zip_ref:
 
         # Extraer todo el dump al temporario y el filestore a su lugar
-        with zipfile.ZipFile(backup_filename, "r") as zip_ref:
+        with ZipFile(backup_filename, "r") as zip_ref:
             for member in zip_ref.infolist():
                 if member.filename.startswith('filestore'):
                     parts = member.filename.split('/',1)[1]
@@ -146,6 +145,9 @@ def do_restore_database(args, backup_filename):
 def backup_database(args):
     """Hacer un backup de la base de datos, en args viene los datos necesarios"""
 
+    # Obtener el lugar donde esta el filestore
+    source = f"{args.base}/data_dir/filestore/{args.db_name}"
+
     # Obtener el nombre del archivo zip que contendrá el filestore y el dump
     backup_filename = get_zip_filename(args)
     logging.info(f"Backing up database {args.db_name} into file {backup_filename}")
@@ -171,51 +173,39 @@ def backup_database(args):
 
         logging.info(f"Dump file created")
 
-
-
-
-        # Copiar el arbol de filestore al directorio temporario
-        source = f"{args.base}/data_dir/filestore/{args.db_name}"
-        # destination = f"{tempdir}/filestore"
-        # try:
-        #     subprocess.run(['cp','-a', source,destination],check=True)
-        # except subprocess.CalledProcessError as e:
-        #    logging.error(f"Error en copiado de filestore {e}")
-        #    exit(1)
-
-
-
-
-#        logging.info(f"filestore copied filestore to {destination}")
-
-        # Crear el ZIP preservando los atributos
+        # Crear el ZIP
         try:
-            with zipfile.ZipFile(f"{backup_filename}.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+            with ZipFile(f"{tempdir}/backup.zip", "w", ZIP_DEFLATED) as zipf:
                 # Generar el dump de la BD y agregarlo directamente al ZIP
+                zipf.write(f"{tempdir}/dump.sql",'dump.sql')
+                file_stats = os.stat(f"{tempdir}/dump.sql")
+                size = file_stats.st_size / (1024 ** 3)
+                logging.info(f"Database dump {size:.2f} GB added to ZIP")
+                os.remove(f"{tempdir}/dump.sql")  # Borra para optimizar espacio
 
-                # Agregar el dump al ZIP
-                zipf.write(tempdir, "dump.sql")
-                logging.info(f"Database dump added to ZIP")
-
-                logging.info(f"Adding files from {source} to ZIP")
+                logging.info("Adding files from filestore to ZIP")
                 for root, dirs, files in os.walk(source):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        arcname = os.path.relpath(file_path, tempdir)  # Path relativo dentro del zip
+                        arcname = file_path.replace(source,"/filestore")  # Path relativo dentro del zip
 
                         # Obtener atributos y permisos del archivo
-                        stat = os.stat(file_path)
-                        info = zipfile.ZipInfo(arcname)
-                        info.date_time = time.localtime(stat.st_mtime)[:6]
-                        info.external_attr = (stat.st_mode & 0xFFFF) << 16  # Preservar permisos
-                        logging.info(f"Adding file to zip {file_path}")
+                        # stat = os.stat(file_path)
+                        # info = ZipInfo(arcname)
+                        # info.date_time = time.localtime(stat.st_mtime)[:6]
+                        # info.external_attr = (stat.st_mode & 0xFFFF) << 16  # Preservar permisos
+                        # logging.info(f"Adding file to zip {file_path}")
 
-                        # Añadir el archivo al ZIP
-                        with open(file_path, "rb") as f:
-                            zipf.writestr(info, f.read())
+                        # # Añadir el archivo al ZIP
+                        # with open(file_path, "rb") as f:
+                        #     zipf.writestr(info, f.read())
+                        zipf.write(file_path, arcname)
         except Exception as e:
             logging.error(f"Error creando archivo ZIP: {e}")
             exit(1)
+
+        # Copiar el backup al directorio final
+        shutil.move(f"{tempdir}/backup.zip", f"{backup_filename}.zip" )
 
 def cleanup_backup_files(args):
     """Elimiar los backups antiguos que tengan más de args.days_to_keep de
