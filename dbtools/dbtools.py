@@ -17,36 +17,51 @@ from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
 import logging
 
+# Definir un formato para los logs con colores
+class ColorizingStreamHandler(logging.StreamHandler):
+    COLORS = {
+        'DEBUG': '\033[94m',  # Azul
+        'INFO': '\033[92m',   # Verde
+        'WARNING': '\033[93m',  # Amarillo
+        'ERROR': '\033[91m',   # Rojo
+        'CRITICAL': '\033[91m', # Rojo
+        'RESET': '\033[0m'      # Reset de color
+    }
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+            self.stream.write(color + msg + self.COLORS['RESET'] + '\n')
+            self.flush()
+        except Exception:
+            self.handleError(record)
+
 # Configurar logging para que salga solo en la consola
 logging.basicConfig(
     level=logging.DEBUG,  # Nivel de log
     format="%(asctime)s - %(levelname)s - %(message)s",  # Formato del mensaje
     datefmt="%H:%M:%S",  # Formato personalizado para la hora
+    handlers=[ColorizingStreamHandler()]  # Usar el handler personalizado
 )
 
 params = {}
-rojo = "\033[91m"
-resetear_color = "\033[0m"
-
 
 def get_zip_filename(args):
     """Crear el nombre del archivo hacia el cual hacer backup o restore"""
 
     if args.backup:
         # BACKUP
-        if not args.zipfile:
-            # no tengo el nombre del backup, lo genero con la hora y el cliente
-            fecha_hora_local = datetime.now()
-            zipfile = fecha_hora_local.strftime(f"{args.db_name}_%Y%m%d_%H_%M_%S")
-            return f"{args.base}/backup_dir/{zipfile}"
-        else:
-            # si tengo el nombre del backup es un error
-            logging.error("Do not use --db-name in a backup")
-            exit(1)
+        if args.zipfile:
+            return args.zipfile
+
+        # no tengo el nombre del backup, lo genero con la hora y el cliente
+        fecha_hora_local = datetime.now()
+        zipfile = fecha_hora_local.strftime(f"{args.db_name}_%Y%m%d_%H_%M_%S")
+        return f"{args.base}/backup_dir/{zipfile}.zip"
     else:
         # RESTORE
         if args.zipfile:
-            return zipfile
+            return args.zipfile
         else:
             # no tengo el nombre del backup a restaurar, busco el úlimo
             return get_last_backup_file(args)
@@ -85,9 +100,6 @@ def deflate_zip(args, backup_filename, tempdir):
     try:
         # If the filestore backup folder already exists, delete it
         shutil.rmtree(f"{filestorepath}/{args.db_name}")
-        logging.info(
-            f"Filestore directory {filestorepath}/{args.db_name} deleted successfully."
-        )
     except FileNotFoundError:
         logging.warning(
             f"The directory {filestorepath}/{args.db_name} does not exist. Skipping deletion."
@@ -116,14 +128,8 @@ def deflate_zip(args, backup_filename, tempdir):
                     parts = member.filename.split("/", 1)[1]
                     member.filename = f"{args.db_name}/{parts}"
                     zip_ref.extract(member, filestorepath)
-                    extractpath = os.path.join(filestorepath, member.filename)
                 else:
                     zip_ref.extract(member, tempdir)
-                    extractpath = os.path.join(tempdir, member.filename)
-
-                # Restaurar los permisos correspondientes a los archivos
-                permissions = member.external_attr >> 16
-                os.chmod(extractpath, permissions)
 
     # Return the full path to the database dump file in the temporary directory
     return f"{tempdir}/dump.sql"
@@ -177,8 +183,8 @@ def do_restore_database(args, backup_filename):
                         "-p",
                         f"{params.get('db_port', 5432)}",
                     ],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,  # No capturar stdout
+                    stderr=subprocess.DEVNULL,  # No capturar stderr
                     stdin=d_filename,
                     text=True,
                 )
@@ -207,7 +213,7 @@ def backup_database(args):
 
     # Obtener el nombre del archivo zip que contendrá el filestore y el dump
     backup_filename = get_zip_filename(args)
-    logging.info(f"Backing up database {args.db_name} into file {backup_filename}")
+    logging.info(f"Backing up database {args.db_name} into file {os.path.basename(backup_filename)}")
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
@@ -228,45 +234,33 @@ def backup_database(args):
             logging.error(f"Error en backup {e}")
             exit(1)
 
-        logging.info(f"Dump file created")
+        size = os.path.getsize(f"{tempdir}/dump.sql") / (1024 ** 3)
+        logging.info(f"Dump file {size:.2f} GB created")
 
         # Crear el ZIP
         try:
             with ZipFile(f"{tempdir}/backup.zip", "w", ZIP_DEFLATED) as zipf:
                 # Generar el dump de la BD y agregarlo directamente al ZIP
                 zipf.write(f"{tempdir}/dump.sql", "dump.sql")
-                file_stats = os.stat(f"{tempdir}/dump.sql")
-                size = file_stats.st_size / (1024**3)
-                logging.info(f"Database dump {size:.2f} GB added to ZIP")
+                logging.info(f"Database dump added to ZIP")
                 os.remove(f"{tempdir}/dump.sql")  # Borra para optimizar espacio
 
                 logging.info("Adding files from filestore to ZIP")
                 for root, dirs, files in os.walk(source):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        arcname = file_path.replace(
-                            source, "/filestore"
-                        )  # Path relativo dentro del zip
-
-                        # Obtener atributos y permisos del archivo
-                        # stat = os.stat(file_path)
-                        # info = ZipInfo(arcname)
-                        # info.date_time = time.localtime(stat.st_mtime)[:6]
-                        # info.external_attr = (stat.st_mode & 0xFFFF) << 16  # Preservar permisos
-                        # logging.info(f"Adding file to zip {file_path}")
-
-                        # # Añadir el archivo al ZIP
-                        # with open(file_path, "rb") as f:
-                        #     zipf.writestr(info, f.read())
+                        # Path relativo dentro del zip
+                        arcname = file_path.replace(source, "/filestore")
                         zipf.write(file_path, arcname)
+                        logging.debug(f"Added {arcname}")
         except Exception as e:
             logging.error(f"Error creando archivo ZIP: {e}")
             exit(1)
 
         try:
             # Copiar el backup al directorio final
-            shutil.move(f"{tempdir}/backup.zip", f"{backup_filename}.zip")
-            logging.info(f"Backup moved successfully to {backup_filename}.zip")
+            shutil.move(f"{tempdir}/backup.zip", backup_filename)
+            logging.info(f"Backup moved successfully to {backup_filename}")
         except FileNotFoundError as e:
             logging.error(
                 f"File not found: {e}. Ensure the source file exists before moving."
@@ -349,7 +343,7 @@ def restore_database(args):
 
     # Obtener el nombre del backup del cual restaurar
     backup_filename = get_zip_filename(args)
-    logging.info(f"Restoring {backup_filename} into Database {args.db_name}")
+    logging.info(f"Restoring {os.path.basename(backup_filename)} into Database {args.db_name}")
 
     try:
         conn = psycopg2.connect(
