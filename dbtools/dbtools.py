@@ -2,7 +2,7 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
-import time
+
 import os
 import ast
 import configparser
@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import os, glob
+import glob
 from datetime import datetime
 from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
@@ -20,13 +20,14 @@ import logging
 # Configurar logging para que salga solo en la consola
 logging.basicConfig(
     level=logging.DEBUG,  # Nivel de log
-    format='%(asctime)s - %(levelname)s - %(message)s',  # Formato del mensaje
-    datefmt='%H:%M:%S'  # Formato personalizado para la hora
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Formato del mensaje
+    datefmt="%H:%M:%S",  # Formato personalizado para la hora
 )
 
 params = {}
 rojo = "\033[91m"
 resetear_color = "\033[0m"
+
 
 def get_zip_filename(args):
     """Crear el nombre del archivo hacia el cual hacer backup o restore"""
@@ -40,14 +41,14 @@ def get_zip_filename(args):
             return f"{args.base}/backup_dir/{zipfile}"
         else:
             # si tengo el nombre del backup es un error
-            logging.error('Do not use --db-name in a backup')
+            logging.error("Do not use --db-name in a backup")
             exit(1)
     else:
         # RESTORE
         if args.zipfile:
             return zipfile
         else:
-            # no tengo el nombre del restore, busco el úlimo
+            # no tengo el nombre del backup a restaurar, busco el úlimo
             return get_last_backup_file(args)
 
     # si me viene el parametro args.zipfile ese es el nombre que voy a usar sin
@@ -58,13 +59,19 @@ def get_zip_filename(args):
 def get_last_backup_file(args):
     """Obtener el nombre del último backup que se creó"""
     files = glob.glob(f"{args.base}/backup_dir/*.zip")
-    if files:
-        backup_filename = max(files, key=os.path.getctime)
-        logging.info(f"Choosing the latest backup {os.path.basename(backup_filename)}")
-        return backup_filename
-    else:
+    if not files:
         logging.info("No backups to restore !")
         exit(1)
+
+    # Filtrar los archivos por el nombre de la BD a restaurar
+    filtered_files = [file for file in files if args.db_name in file]
+    if not filtered_files:
+        logging.info("No backups to restore !")
+        exit(1)
+
+    latest_file = max(filtered_files, key=os.path.getctime)
+    logging.info(f"Choosing the latest backup {os.path.basename(latest_file)}")
+    return latest_file
 
 
 def deflate_zip(args, backup_filename, tempdir):
@@ -74,7 +81,30 @@ def deflate_zip(args, backup_filename, tempdir):
     filestorepath = f"{args.base}/data_dir/filestore"
 
     # If the filestore backup folder already exists, delete it
-    shutil.rmtree(f"{filestorepath}/{args.db_name}", ignore_errors=True)
+    #    shutil.rmtree(f"{filestorepath}/{args.db_name}")
+    try:
+        # If the filestore backup folder already exists, delete it
+        shutil.rmtree(f"{filestorepath}/{args.db_name}")
+        logging.info(
+            f"Filestore directory {filestorepath}/{args.db_name} deleted successfully."
+        )
+    except FileNotFoundError:
+        logging.warning(
+            f"The directory {filestorepath}/{args.db_name} does not exist. Skipping deletion."
+        )
+    except PermissionError as e:
+        logging.error(
+            f"Permission denied while attempting to delete {filestorepath}/{args.db_name}: {e}"
+        )
+        exit(1)
+    except shutil.Error as e:
+        logging.error(
+            f"Error occurred while deleting the directory {filestorepath}/{args.db_name}: {e}"
+        )
+        exit(1)
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while deleting the directory: {e}")
+        exit(1)
 
     # Open the ZIP file
     with ZipFile(backup_filename, "r") as zip_ref:
@@ -82,10 +112,10 @@ def deflate_zip(args, backup_filename, tempdir):
         # Extraer todo el dump al temporario y el filestore a su lugar
         with ZipFile(backup_filename, "r") as zip_ref:
             for member in zip_ref.infolist():
-                if member.filename.startswith('filestore'):
-                    parts = member.filename.split('/',1)[1]
+                if member.filename.startswith("filestore"):
+                    parts = member.filename.split("/", 1)[1]
                     member.filename = f"{args.db_name}/{parts}"
-                    zip_ref.extract(member,filestorepath)
+                    zip_ref.extract(member, filestorepath)
                     extractpath = os.path.join(filestorepath, member.filename)
                 else:
                     zip_ref.extract(member, tempdir)
@@ -108,15 +138,18 @@ def killing_db_connections(args, cur):
         """
     cur.execute(sql)
 
+
 def drop_database(args, cur):
     logging.info("Dropping database if exists")
     sql = f'DROP DATABASE IF EXISTS "{args.db_name}";'
     cur.execute(sql)
 
+
 def create_database(args, cur):
     logging.info("Creating database")
     sql = f'CREATE DATABASE "{args.db_name}";'
     cur.execute(sql)
+
 
 def do_restore_database(args, backup_filename):
     """Restore database and filestore"""
@@ -124,23 +157,47 @@ def do_restore_database(args, backup_filename):
     with tempfile.TemporaryDirectory() as tempdir:
 
         # Extraer el Filestore al filestore de la estructura y el backup al temp dir
-        logging.info( "Deflating zip")
+        logging.info("Deflating zip")
         dump_filename = deflate_zip(args, backup_filename, tempdir)
         with open(dump_filename, "r") as d_filename:
-            # Run psql command as a subprocess, and specify that the dump file should
-            # be passed as standard input to the psql process
+            # Configurar varialble de entorno para la contraseña de la BD
             os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
             logging.info("Restoring Database")
-            process = subprocess.run(
-                [
-                    "psql", "-U", f"{params.get('db_user','odoo')}",
-                    "-h", f"{params.get('db_host','db')}",
-                    "-d", f"{args.db_name}",
-                    "-p", f"{params.get('db_port', 5432)}",
-                ],
-                stdout=subprocess.PIPE,
-                stdin=d_filename,
-            )
+            try:
+                # Ejecutar el compando psql para restaurar la bc
+                process = subprocess.run(
+                    [
+                        "psql",
+                        "-U",
+                        f"{params.get('db_user','odoo')}",
+                        "-h",
+                        f"{params.get('db_host','db')}",
+                        "-d",
+                        f"{args.db_name}",
+                        "-p",
+                        f"{params.get('db_port', 5432)}",
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    stdin=d_filename,
+                    text=True,
+                )
+                if process.returncode != 0:
+                    logging.error(f"Error restoring database: {process.stderr}")
+                    exit(1)
+                else:
+                    logging.info(f"Database restored successfully: {process.stdout}")
+            except FileNotFoundError:
+                logging.error(
+                    "The 'psql' command was not found. Ensure PostgreSQL is installed and in the PATH."
+                )
+                exit(1)
+            except subprocess.SubprocessError as e:
+                logging.error(
+                    f"An error occurred while running the 'psql' command: {e}"
+                )
+                exit(1)
+
 
 def backup_database(args):
     """Hacer un backup de la base de datos, en args viene los datos necesarios"""
@@ -177,9 +234,9 @@ def backup_database(args):
         try:
             with ZipFile(f"{tempdir}/backup.zip", "w", ZIP_DEFLATED) as zipf:
                 # Generar el dump de la BD y agregarlo directamente al ZIP
-                zipf.write(f"{tempdir}/dump.sql",'dump.sql')
+                zipf.write(f"{tempdir}/dump.sql", "dump.sql")
                 file_stats = os.stat(f"{tempdir}/dump.sql")
-                size = file_stats.st_size / (1024 ** 3)
+                size = file_stats.st_size / (1024**3)
                 logging.info(f"Database dump {size:.2f} GB added to ZIP")
                 os.remove(f"{tempdir}/dump.sql")  # Borra para optimizar espacio
 
@@ -187,7 +244,9 @@ def backup_database(args):
                 for root, dirs, files in os.walk(source):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        arcname = file_path.replace(source,"/filestore")  # Path relativo dentro del zip
+                        arcname = file_path.replace(
+                            source, "/filestore"
+                        )  # Path relativo dentro del zip
 
                         # Obtener atributos y permisos del archivo
                         # stat = os.stat(file_path)
@@ -204,28 +263,45 @@ def backup_database(args):
             logging.error(f"Error creando archivo ZIP: {e}")
             exit(1)
 
-        # Copiar el backup al directorio final
-        shutil.move(f"{tempdir}/backup.zip", f"{backup_filename}.zip" )
+        try:
+            # Copiar el backup al directorio final
+            shutil.move(f"{tempdir}/backup.zip", f"{backup_filename}.zip")
+            logging.info(f"Backup moved successfully to {backup_filename}.zip")
+        except FileNotFoundError as e:
+            logging.error(
+                f"File not found: {e}. Ensure the source file exists before moving."
+            )
+            exit(1)
+        except PermissionError as e:
+            logging.error(
+                f"Permission denied while moving the backup: {e}. Check directory permissions."
+            )
+            exit(1)
+        except shutil.Error as e:
+            logging.error(f"Error during moving the backup file: {e}")
+            exit(1)
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            exit(1)
+
 
 def cleanup_backup_files(args):
     """Elimiar los backups antiguos que tengan más de args.days_to_keep de
     antiguedad y que empiecen con el nombre de la base"""
 
-    # sin el parametro termina
-    if not args.days_to_keep:
-        return
-
-    actual_date = datetime.now()
-    max_age = datetime.timedelta(days=int(args.days_to_keep))
-    backup_dir = f"{args.base}/backup_dir"
-    for file in os.listdir(backup_dir):
-        if file.startswith(args.db_name):
-            filepath = os.path.join(backup_dir, file)
-            if os.path.isfile(filepath):
-                file_date = datetime.fromtimestamp(os.path.getmtime(filepath))
-                file_age = actual_date - file_date
-                if file_age > max_age:
-                    os.remove(filepath)
+    # Solo borra archivos si esta el parametro days_to_keep
+    if args.days_to_keep:
+        actual_date = datetime.now()
+        max_age = datetime.timedelta(days=int(args.days_to_keep))
+        backup_dir = f"{args.base}/backup_dir"
+        for file in os.listdir(backup_dir):
+            if file.startswith(args.db_name):
+                filepath = os.path.join(backup_dir, file)
+                if os.path.isfile(filepath):
+                    file_date = datetime.fromtimestamp(os.path.getmtime(filepath))
+                    file_age = actual_date - file_date
+                    if file_age > max_age:
+                        os.remove(filepath)
 
 
 def check_parameters(args):
@@ -251,7 +327,7 @@ def check_parameters(args):
                 break
 
     if not params:
-        print('proyect {proyect_name}_default not found!')
+        print("proyect {proyect_name}_default not found!")
         exit(1)
 
     # si no viene el nombre de la base de datos construir el default
@@ -271,7 +347,7 @@ def check_parameters(args):
 
 def restore_database(args):
 
-    # Obtener el nombre del backup
+    # Obtener el nombre del backup del cual restaurar
     backup_filename = get_zip_filename(args)
     logging.info(f"Restoring {backup_filename} into Database {args.db_name}")
 
@@ -346,12 +422,9 @@ if __name__ == "__main__":
 
     if args.restore:
         restore_database(args)
-        logging.info(
-            f"{rojo}RESTORE TO {args.db_name} DATABASE IS FIHISHED , "
-            f"WARNING - DATABASE IS EXACT {resetear_color}"
-        )
+        logging.info(f"Database {args.db_name} was restored")
 
     if args.backup:
         backup_database(args)
         cleanup_backup_files(args)
-        logging.info("database backed up")
+        logging.info("Database backed up")

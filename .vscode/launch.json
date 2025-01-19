@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--base","/odoo/ar/odoo-16.0e/claretiana", "--backup"],
+            "args": ["--base","/odoo/ar/odoo-16.0e/claretiana", "--restore"],
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/dbtools/dbtools.py",
