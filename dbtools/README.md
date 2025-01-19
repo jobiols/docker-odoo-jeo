@@ -34,3 +34,11 @@ Docker image with posgres tools to manage backup and restore
         --db-name $db_name
         --restore
 
+--------------------------------
+
+Nuevas formas de hacer bkp
+
+pg_restore
+
+pg_dump
+

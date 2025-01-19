@@ -155,6 +155,7 @@ def backup_database(args):
         os.environ["PGPASSWORD"] = params["db_password"]
         # Crear el dump
         try:
+            logging.info(f"Making dump file")
             cmd = [
                 "pg_dump",
                 f"--dbname={params['db_name']}",
@@ -168,6 +169,8 @@ def backup_database(args):
             logging.error(f"Error en backup {e}")
             exit(1)
 
+        logging.info(f"Dump file created")
+
         # Copiar el arbol de filestore al directorio temporario
         source = f"{args.base}/data_dir/filestore/{args.db_name}"
         destination = f"{tempdir}/filestore"
@@ -176,6 +179,8 @@ def backup_database(args):
         except subprocess.CalledProcessError as e:
            logging.error(f"Error en copiado de filestore {e}")
            exit(1)
+
+        logging.info(f"filestore copied filestore to {destination}")
 
         # Crear el ZIP preservando los atributos
         try:
@@ -190,6 +195,7 @@ def backup_database(args):
                         info = zipfile.ZipInfo(arcname)
                         info.date_time = time.localtime(stat.st_mtime)[:6]
                         info.external_attr = (stat.st_mode & 0xFFFF) << 16  # Preservar permisos
+                        logging.info(f"Adding file to zip {file_path}")
 
                         # Añadir el archivo al ZIP
                         with open(file_path, "rb") as f:
@@ -267,10 +273,6 @@ def restore_database(args):
     logging.info(f"Restoring {backup_filename} into Database {args.db_name}")
 
     try:
-        # Crear conexion a la base de datos
-        #TODO Quitar esto para produccion
-        #params['db_host'] = 'localhost'
-
         conn = psycopg2.connect(
             user=params["db_user"],
             host=params["db_host"],
