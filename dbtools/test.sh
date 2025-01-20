@@ -14,18 +14,32 @@ sd build --rm=true -t jobiols/dbtools:1.4.6 ./
 #     --days-to-keep 3 \
 #     --restore
 
+base=/odoo/ar/odoo-16.0e/bukito
+link=pg-bukito:db
+
 echo "BACKUP\n"
 # backup normal
 sudo docker run --rm \
-    --link pg-bukito:db \
-    -v /odoo/ar/odoo-16.0e/bukito:/base \
+    --link $link \
+    -v $base:/base \
     jobiols/dbtools:1.4.6 \
     --backup
+
+echo "BACKUP x 10 dias\n"
+# backup normal
+sudo docker run --rm \
+    --link $link \
+    -v $base:/base \
+    jobiols/dbtools:1.4.6 \
+    --days-to-keep 10 \
+    --backup
+
+
 
 echo "RESTORE\n"
 # restore normal
 sudo docker run --rm \
-    --link pg-bukito:db \
-    -v /odoo/ar/odoo-16.0e/bukito:/base \
+    --link $link \
+    -v $base:/base \
     jobiols/dbtools:1.4.6 \
     --restore

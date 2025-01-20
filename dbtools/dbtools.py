@@ -12,7 +12,7 @@ import tempfile
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import glob
-from datetime import datetime
+from datetime import datetime, timedelta
 from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
 import logging
@@ -284,7 +284,7 @@ def cleanup_backup_files(args):
     # Solo borra archivos si esta el parametro days_to_keep
     if args.days_to_keep:
         actual_date = datetime.now()
-        max_age = datetime.timedelta(days=int(args.days_to_keep))
+        max_age = timedelta(days=int(args.days_to_keep))
         backup_dir = f"{args.base}/backup_dir"
         for file in os.listdir(backup_dir):
             if file.startswith(args.db_name):
@@ -419,4 +419,4 @@ if __name__ == "__main__":
     if args.backup:
         backup_database(args)
         cleanup_backup_files(args)
-        logging.info(f"Database backed {args.db_name} successfully backed up")
+        logging.info(f"Database {args.db_name} successfully backed up")
