@@ -43,7 +43,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
 logging.basicConfig(
     level=logging.INFO,  # Nivel de log
     format="%(asctime)s - %(levelname)s - %(message)s",  # Formato del mensaje
-    datefmt="%H:%M:%S",  # Formato personalizado para la hora
+    datefmt="%Y-%m-%d %H:%M:%S",  # Formato personalizado para la hora
     handlers=[ColorizingStreamHandler()],  # Usar el handler personalizado
 )
 
