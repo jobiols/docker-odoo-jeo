@@ -82,8 +82,9 @@ def get_last_backup_file(args):
         logging.info("No backups to restore !")
         exit(1)
 
-    # Filtrar los archivos por el nombre de la BD a restaurar
-    filtered_files = [file for file in files if args.db_name in file]
+    # Filtrar los archivos por el nombre del cliente a restaurar
+    backup_key = f"{params['manifest']['name']}_prod"
+    filtered_files = [file for file in files if backup_key in file]
     if not filtered_files:
         logging.info("No backups to restore !")
         exit(1)
