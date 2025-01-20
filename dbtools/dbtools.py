@@ -17,34 +17,38 @@ from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
 import logging
 
+
 # Definir un formato para los logs con colores
 class ColorizingStreamHandler(logging.StreamHandler):
     COLORS = {
-        'DEBUG': '\033[94m',  # Azul
-        'INFO': '\033[92m',   # Verde
-        'WARNING': '\033[93m',  # Amarillo
-        'ERROR': '\033[91m',   # Rojo
-        'CRITICAL': '\033[91m', # Rojo
-        'RESET': '\033[0m'      # Reset de color
+        "DEBUG": "\033[94m",  # Azul
+        "INFO": "\033[92m",  # Verde
+        "WARNING": "\033[93m",  # Amarillo
+        "ERROR": "\033[91m",  # Rojo
+        "CRITICAL": "\033[91m",  # Rojo
+        "RESET": "\033[0m",  # Reset de color
     }
+
     def emit(self, record):
         try:
             msg = self.format(record)
-            color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
-            self.stream.write(color + msg + self.COLORS['RESET'] + '\n')
+            color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
+            self.stream.write(color + msg + self.COLORS["RESET"] + "\n")
             self.flush()
         except Exception:
             self.handleError(record)
+
 
 # Configurar logging para que salga solo en la consola
 logging.basicConfig(
     level=logging.INFO,  # Nivel de log
     format="%(asctime)s - %(levelname)s - %(message)s",  # Formato del mensaje
     datefmt="%H:%M:%S",  # Formato personalizado para la hora
-    handlers=[ColorizingStreamHandler()]  # Usar el handler personalizado
+    handlers=[ColorizingStreamHandler()],  # Usar el handler personalizado
 )
 
 params = {}
+
 
 def get_zip_filename(args):
     """Crear el nombre del archivo hacia el cual hacer backup o restore"""
@@ -211,7 +215,9 @@ def backup_database(args):
 
     # Obtener el nombre del archivo zip que contendrá el filestore y el dump
     backup_filename = get_zip_filename(args)
-    logging.info(f"Backing up database {args.db_name} into file {os.path.basename(backup_filename)}")
+    logging.info(
+        f"Backing up database {args.db_name} into file {os.path.basename(backup_filename)}"
+    )
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
@@ -232,7 +238,7 @@ def backup_database(args):
             logging.error(f"Error en backup {e}")
             exit(1)
 
-        size = os.path.getsize(f"{tempdir}/dump.sql") / (1024 ** 3)
+        size = os.path.getsize(f"{tempdir}/dump.sql") / (1024**3)
         logging.info(f"Dump file {size:.2f} GB created")
 
         # Crear el ZIP
@@ -341,7 +347,9 @@ def restore_database(args):
 
     # Obtener el nombre del backup del cual restaurar
     backup_filename = get_zip_filename(args)
-    logging.info(f"Restoring {os.path.basename(backup_filename)} into Database {args.db_name}")
+    logging.info(
+        f"Restoring {os.path.basename(backup_filename)} into Database {args.db_name}"
+    )
 
     try:
         conn = psycopg2.connect(
