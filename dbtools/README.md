@@ -30,7 +30,7 @@ Docker image with posgres tools to manage backup and restore
         --volume ${BASE}:/base \
         --network compose_default
         --link postgres:db \
-        jobiols/dbtools:1.4.4 \
+        jobiols/dbtools:1.4.7 \
         --db-name $db_name
         --restore
 
@@ -41,4 +41,3 @@ Nuevas formas de hacer bkp
 pg_restore
 
 pg_dump
-

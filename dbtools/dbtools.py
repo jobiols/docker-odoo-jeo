@@ -416,7 +416,7 @@ if __name__ == "__main__":
         logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    logging.info(f"Database utils V1.4.6")
+    logging.info(f"Database utils V1.4.7")
 
     check_parameters(args)
 
