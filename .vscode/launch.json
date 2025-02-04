@@ -6,10 +6,10 @@
     "configurations": [
         {
             "name": "Python: archivo actual",
-            "args": ["--base","/odoo/ar/odoo-16.0e/claretiana", "--restore", "--db-name", "dpy_test_1111"],
+            "args": ["--base","/odoo/ar/odoo-16.0e/bukito", "--restore"],
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/dbtools/dbtools.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "pythonPath": "${workspaceFolder}/.venv/bin/python",

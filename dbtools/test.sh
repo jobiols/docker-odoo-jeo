@@ -3,10 +3,8 @@
 
 # Seria interesante hacer un backup y un restore con pg_backup pg_restore porque tienen
 # capacidad de usar multiples cores
-sd build --rm=true -t jobiols/dbtools:1.4.4 ./
+sd build --rm=true -t jobiols/dbtools:1.4.7 ./
 
-echo "iniciando Test"
-echo
 
 # restore normal
 # sudo docker run --rm -it \
@@ -16,9 +14,32 @@ echo
 #     --days-to-keep 3 \
 #     --restore
 
+base=/odoo/ar/odoo-16.0e/bukito
+link=pg-bukito:db
+dbtools=jobiols/dbtools:1.4.7
+
+
+echo "BACKUP\n"
 # backup normal
-sudo docker run --rm -it \
-    --link pg-lopez:db \
-    -v /odoo/ar/odoo-16.0e/lopez:/base \
-    jobiols/dbtools:1.4.4 --db-name lopez_prod \
+sudo docker run --rm \
+    --link $link \
+    -v $base:/base \
+    $dbtools \
     --backup
+
+echo "BACKUP x 10 dias\n"
+# backup normal
+sudo docker run --rm \
+    --link $link \
+    -v $base:/base \
+    $dbtools \
+    --days-to-keep 10 \
+    --backup
+
+echo "RESTORE\n"
+# restore normal
+sudo docker run --rm \
+    --link $link \
+    -v $base:/base \
+    $dbtools \
+    --restore
