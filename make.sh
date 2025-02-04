@@ -5,8 +5,6 @@
 set -e
 
 # limpiar las copias de debug
-cd /odoo/ar/odoo-13.0/
-sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-14.0/
 sudo rm -rf dist-local-packages dist-packages extra-addons
 cd /odoo/ar/odoo-15.0/
@@ -22,7 +20,7 @@ CD="/mnt/old/home/jobiols/git-repos/docker-odoo-jeo/jeo"
 
 set -e
 
-versions=( 14.0 15.0 16.0 17.0 18.0 )
+versions=( 15.0 16.0 17.0 18.0 )
 
 for version in ${versions[@]}
 do
