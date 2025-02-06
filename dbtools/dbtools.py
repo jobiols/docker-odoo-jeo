@@ -18,6 +18,8 @@ import shutil
 import logging
 
 
+colorized = False
+
 # Definir un formato para los logs con colores
 class ColorizingStreamHandler(logging.StreamHandler):
     COLORS = {
@@ -32,8 +34,10 @@ class ColorizingStreamHandler(logging.StreamHandler):
     def emit(self, record):
         try:
             msg = self.format(record)
-            color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
-            self.stream.write(color + msg + self.COLORS["RESET"] + "\n")
+            if colorized:
+                color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
+                msg = color + msg + self.COLORS["RESET"]
+            self.stream.write(msg + "\n")
             self.flush()
         except Exception:
             self.handleError(record)
@@ -417,7 +421,7 @@ if __name__ == "__main__":
         logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    logging.info(f"Database utils V1.4.7")
+    logging.info("Database utils V1.4.8")
 
     check_parameters(args)
 
