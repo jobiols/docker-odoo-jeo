@@ -1,5 +1,5 @@
 FROM debian:bullseye-slim AS base-image
-LABEL Odoo S.A. <info@odoo.com>
+LABEL maintainer="Odoo S.A. <info@odoo.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
