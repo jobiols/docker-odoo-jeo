@@ -16,4 +16,3 @@ meli @ git+https://github.com/mercadolibre/python-sdk.git@09406bd544b974b379fea4
 
 unrar
 openpyxl
-xlrd==2.0.1

@@ -4,7 +4,7 @@ LABEL maintainer="Odoo S.A. <info@odoo.com>"
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG=C.UTF-8
+ENV LANG C.UTF-8
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
@@ -33,6 +33,7 @@ RUN apt-get update && \
         python3-slugify \
         python3-vobject \
         python3-watchdog \
+        python3-xlrd \
         python3-xlwt \
         xz-utils && \
     if [ -z "${TARGETARCH}" ]; then \
