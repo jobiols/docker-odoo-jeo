@@ -330,7 +330,7 @@ def check_parameters(args):
                 break
 
     if not params:
-        print("proyect {proyect_name}_default not found!")
+        print(f"proyect {proyect_name}_default not found!")
         exit(1)
 
     # si no viene el nombre de la base de datos construir el default
