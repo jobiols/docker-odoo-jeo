@@ -1,5 +1,5 @@
-FROM ubuntu:jammy AS base-image
-LABEL maintainer="Odoo S.A. <info@odoo.com>"
+FROM ubuntu:jammy
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -10,12 +10,11 @@ ENV LANG=en_US.UTF-8
 ARG TARGETARCH
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
-
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         ca-certificates \
-        curl wget \
+        curl \
         dirmngr \
         fonts-noto-cjk \
         gnupg \
@@ -37,7 +36,8 @@ RUN apt-get update && \
         python3-watchdog \
         python3-xlrd \
         python3-xlwt \
-        xz-utils && \
+        xz-utils \
+        git && \
     if [ -z "${TARGETARCH}" ]; then \
         TARGETARCH="$(dpkg --print-architecture)"; \
     fi; \
@@ -53,6 +53,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # install latest postgresql-client
+# --------------------------------------------------------------------------------------------------
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
     && GNUPGHOME="$(mktemp -d)" \
     && export GNUPGHOME \
@@ -66,21 +67,40 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/a
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
 
-# Install rtlcss (on Debian buster)
+# Install rtlcss (para soporte de LTR)
+# Instala paquete de node.js para procesar lenguajes de derecha a izquierda (arabe, hebreo, etc.)
 RUN npm install -g rtlcss
 
-# Install Odoo
-ENV ODOO_VERSION=17.0
-ARG ODOO_RELEASE=20250228
-#ARG ODOO_SHA=76bba01e66368d00dc94c424f5f4964b8299f1b4
-RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
-    && apt-get update \
-    && apt-get -y install --no-install-recommends ./odoo.deb \
-    && rm -rf /var/lib/apt/lists/* odoo.deb
+# Create ODOO system user ----"
+# --------------------------------------------------------------------------------------------------
+RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --group odoo
+#The user should also be added to the sudo'ers group. NOOOOOOO
+#RUN adduser odoo sudo
 
-# FIX error en nightly le falta una funcion en este archivo
-RUN wget -O /usr/lib/python3/dist-packages/odoo/service/model.py https://raw.githubusercontent.com/odoo/odoo/refs/heads/17.0/odoo/service/model.py
+# Install Odoo
+# --------------------------------------------------------------------------------------------------
+ENV ODOO_VERSION=17.0
+ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
+RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}
+
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    gcc \
+    libev-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+#RUN pip install --no-binary :all: gevent==21.8.0
+#RUN pip install -r ${ODOO_HOME}/requirements.txt
+
+# ENV ODOO_VERSION 17.0
+# ARG ODOO_RELEASE=20250218
+# ARG ODOO_SHA=89289fe99db80d02fdabeb2fa63164f5c0464c43
+# RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
+#     && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+#     && apt-get update \
+#     && apt-get -y install --no-install-recommends ./odoo.deb \
+#     && rm -rf /var/lib/apt/lists/* odoo.deb
 
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
@@ -100,20 +120,6 @@ ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
-# Set default user when running the container
-USER odoo
-
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
-
-###############################################################################
-############################ Fin de base image ################################
-###############################################################################
-
-FROM base-image
-LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-
-USER root
 
 ENV ETC_DIR=/opt/odoo/etc
 ENV DATA_DIR=/opt/odoo/data
@@ -136,7 +142,7 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && rm get-pip.py
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    git python3-dev build-essential
+    python3-dev build-essential
 
 COPY ./requirements /req
 RUN pip3 install -r /req/odoo-argentina.txt
@@ -147,4 +153,6 @@ RUN rm -r /req
 # No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
 # hay que armar la enterprise de cero...
 
-USER odoo
+#USER odoo
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["odoo"]
