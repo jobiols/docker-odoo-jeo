@@ -14,12 +14,19 @@ ebaysdk==2.1.5
 freezegun==1.1.0 ; python_version < '3.11'  # (Jammy)
 freezegun==1.2.1 ; python_version >= '3.11'
 geoip2==2.9.0
-gevent==21.8.0 ; sys_platform != 'win32' and python_version == '3.10'  # (Jammy)
-gevent==22.10.2; sys_platform != 'win32' and python_version > '3.10' and python_version < '3.12'
-gevent==24.2.1 ; sys_platform != 'win32' and python_version >= '3.12'  # (Noble)
-greenlet==1.1.2 ; sys_platform != 'win32' and python_version == '3.10'  # (Jammy)
-greenlet==2.0.2 ; sys_platform != 'win32' and python_version > '3.10' and python_version < '3.12'
-greenlet==3.0.3 ; sys_platform != 'win32' and python_version >= '3.12'  # (Noble)
+
+# avanzamos la version de Gevent porque esta no instala
+gevent==22.8.0
+# gevent==21.8.0 ; sys_platform != 'win32' and python_version == '3.10'  # (Jammy)
+# gevent==22.10.2; sys_platform != 'win32' and python_version > '3.10' and python_version < '3.12'
+# gevent==24.2.1 ; sys_platform != 'win32' and python_version >= '3.12'  # (Noble)
+
+#  Avanzamos la versin de greenlet para estar de acuerdo con gevent
+greenlet>=1.1.3,<2.0 ; platform_python_implementation == "CPython"
+# greenlet==1.1.2 ; sys_platform != 'win32' and python_version == '3.10'  # (Jammy)
+# greenlet==2.0.2 ; sys_platform != 'win32' and python_version > '3.10' and python_version < '3.12'
+# greenlet==3.0.3 ; sys_platform != 'win32' and python_version >= '3.12'  # (Noble)
+
 idna==2.10 ; python_version < '3.12'  # requests 2.25.1 depends on idna<3 and >=2.5
 idna==3.6 ; python_version >= '3.12'
 Jinja2==3.0.3 ; python_version <= '3.10'
