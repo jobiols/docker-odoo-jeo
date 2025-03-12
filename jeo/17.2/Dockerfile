@@ -92,31 +92,15 @@ RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --gro
 ENV ODOO_VERSION=17.0
 ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
 RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}
-
-RUN apt-get update && apt-get install -y \
-    python3-dev \
-    gcc \
-    libev-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy entrypoint script and Odoo configuration file
-COPY ./entrypoint.sh /
-COPY ./odoo.conf /etc/odoo/
+ENV PATH="$PATH:/usr/lib/python3/dist-packages/odoo"
 
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
-RUN chown odoo /etc/odoo/odoo.conf \
-    && mkdir -p /mnt/extra-addons \
-    && chown -R odoo /mnt/extra-addons
-VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+# RUN mkdir -p /mnt/extra-addons \
+#     && chown -R odoo /mnt/extra-addons
+# VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
 # Expose Odoo services
 EXPOSE 8069 8071 8072
-
-# Set the default config file
-ENV ODOO_RC=/etc/odoo/odoo.conf
-
-COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
 ENV ETC_DIR=/opt/odoo/etc
 ENV DATA_DIR=/opt/odoo/data
@@ -133,6 +117,11 @@ RUN \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
 
+# Copy entrypoint script and Odoo configuration file
+COPY entrypoint.sh /
+COPY odoo.conf $ETC_DIR/
+COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
+
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     python3-dev build-essential
 
@@ -147,6 +136,6 @@ RUN pip3 install -r /req/odoo-core-requirements.txt
 # No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
 # hay que armar la enterprise de cero...
 
-#USER odoo
+USER odoo
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["odoo"]
