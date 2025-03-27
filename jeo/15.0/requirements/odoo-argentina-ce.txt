@@ -1,4 +1,4 @@
-pyOpenSSL==22.0.0
+pyOpenSSL==25.0.0
 #M2Crypto
 httplib2>=0.7
 git+https://github.com/pysimplesoap/pysimplesoap@e1453f385cee119bf8cfb53c763ef212652359f5
