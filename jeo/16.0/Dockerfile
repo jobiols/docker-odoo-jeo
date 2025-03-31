@@ -4,7 +4,7 @@ LABEL maintainer="Odoo S.A. <info@odoo.com>"
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
@@ -69,7 +69,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION=16.0
-ARG ODOO_RELEASE=20250327
+ARG ODOO_RELEASE=20250331
 #ARG ODOO_SHA=1fb02a432e076dd71aca7a7611a07223919356b9
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -149,4 +149,4 @@ RUN chmod -R 777 /usr/local/lib/python3.9/dist-packages/pyafipws
 # parece que la afip tiene un cifrado debil.
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
-#USER odoo
+USER odoo
