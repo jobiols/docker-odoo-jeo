@@ -162,7 +162,11 @@ def drop_database(args, cur):
 
 def create_database(args, cur):
     logging.info("Creating database")
-    sql = f'CREATE DATABASE "{args.db_name}";'
+    sql = f"""CREATE DATABASE "{args.db_name}"
+              OWNER odoo
+              ENCODING 'UTF8'
+              TEMPLATE template0;
+           """
     cur.execute(sql)
 
 
