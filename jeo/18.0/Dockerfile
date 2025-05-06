@@ -1,5 +1,5 @@
 FROM ubuntu:noble AS base-image
-LABEL maintainer="Odoo S.A. <info@odoo.com>"
+LABEL maintainer="Odoo S.A. <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -27,7 +27,6 @@ RUN apt-get update && \
         python3-odf \
         python3-pdfminer \
         python3-pip \
-        pipx \
         python3-phonenumbers \
         python3-pyldap \
         python3-qrcode \
@@ -73,7 +72,7 @@ RUN npm install -g rtlcss
 # Install Odoo
 ENV ODOO_VERSION=18.0
 ARG ODOO_RELEASE=20250429
-#ARG ODOO_SHA=6bb4a15aa9304ea8642940b232227b1a3e9ac266
+#ARG ODOO_SHA=952a8f7148a7652809546ee7acdc2d66c09e04d9
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
@@ -102,7 +101,7 @@ COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
+
 ###############################################################################
 ############################ Fin de base image ################################
 ###############################################################################
@@ -112,14 +111,12 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
-# instalar OWL
-#RUN npm install -g @odoo/owl # --prefix .
 
-ENV ETC_DIR /opt/odoo/etc
-ENV DATA_DIR /opt/odoo/data
-ENV LOG_DIR /var/log/odoo
-ENV BKP_DIR /var/odoo/backups
-ENV ADDONS_DIR /opt/odoo/custom-addons
+ENV ETC_DIR=/opt/odoo/etc
+ENV DATA_DIR=/opt/odoo/data
+ENV LOG_DIR=/var/log/odoo
+ENV BKP_DIR=/var/odoo/backups
+ENV ADDONS_DIR=/opt/odoo/custom-addons
 ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
