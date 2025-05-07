@@ -16,9 +16,10 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
 import logging
-
+import hashlib
 
 colorized = False
+
 
 # Definir un formato para los logs con colores
 class ColorizingStreamHandler(logging.StreamHandler):
@@ -115,16 +116,21 @@ def deflate_zip(args, backup_filename, tempdir):
         )
     except PermissionError as e:
         logging.error(
-            f"Permission denied while attempting to delete {filestorepath}/{args.db_name}: {e}"
+            f"Permission denied while attempting to delete {filestorepath}/{args.db_name}: {e}",
+            exc_info=True,
         )
         exit(1)
     except shutil.Error as e:
         logging.error(
-            f"Error occurred while deleting the directory {filestorepath}/{args.db_name}: {e}"
+            f"Error occurred while deleting the directory {filestorepath}/{args.db_name}: {e}",
+            exc_info=True,
         )
         exit(1)
     except Exception as e:
-        logging.error(f"An unexpected error occurred while deleting the directory: {e}")
+        logging.error(
+            f"An unexpected error occurred while deleting the directory: {e}",
+            exc_info=True,
+        )
         exit(1)
 
     # Open the ZIP file
@@ -179,7 +185,7 @@ def do_restore_database(args, backup_filename):
         logging.info("Deflating zip")
         dump_filename = deflate_zip(args, backup_filename, tempdir)
         with open(dump_filename, "r") as d_filename:
-            # Configurar varialble de entorno para la contraseña de la BD
+            # Configurar variable de entorno para la contraseña de la BD
             os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
             logging.info("Restoring Database")
             try:
@@ -202,19 +208,32 @@ def do_restore_database(args, backup_filename):
                     text=True,
                 )
                 if process.returncode != 0:
-                    logging.error(f"Error restoring database: {process.stderr}")
+                    logging.error(
+                        f"Error restoring database: {process.stderr}", exc_info=True
+                    )
                     exit(1)
             except FileNotFoundError:
                 logging.error(
-                    "The 'psql' command was not found. Ensure PostgreSQL is installed and in the PATH."
+                    "The 'psql' command was not found. Ensure PostgreSQL is installed and in the PATH.",
+                    exc_info=True,
                 )
                 exit(1)
             except subprocess.SubprocessError as e:
                 logging.error(
-                    f"An error occurred while running the 'psql' command: {e}"
+                    f"An error occurred while restoring DB: {e}",
+                    exc_info=True,
                 )
                 exit(1)
+            except Exception as e:
+                logging.error(f"An unexpected error occurred restoring DB: {e}", exc_info=True)
+                exit(1)
 
+def sha256sum(filename):
+    h = hashlib.sha256()
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 def backup_database(args):
     """Hacer un backup de la base de datos, en args viene los datos necesarios"""
@@ -244,7 +263,10 @@ def backup_database(args):
             ]
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError as e:
-            logging.error(f"Error en backup {e}")
+            logging.error(f"Backup Error {e}", exc_info=True)
+            exit(1)
+        except Exception as e:
+            logging.error(f"An unexpected error ocurred {e}", exc_info=True)
             exit(1)
 
         size = os.path.getsize(f"{tempdir}/dump.sql") / (1024**3)
@@ -267,28 +289,45 @@ def backup_database(args):
                         zipf.write(file_path, arcname)
                         logging.debug(f"Added {arcname}")
         except Exception as e:
-            logging.error(f"Error creando archivo ZIP: {e}")
+            logging.error(f"Creating ZIP file: {e}", exc_info=True)
             exit(1)
 
         try:
-            # Copiar el backup al directorio final
-            shutil.move(f"{tempdir}/backup.zip", backup_filename)
+            # Calcular checksum y tamaño del origial
+            src = f"{tempdir}/backup.zip"
+            dst = backup_filename
+            src_hash = sha256sum(src)
+            src_size = os.path.getsize(src)
+
+            # Aca no se puede hacer un move porque si los filesistems son distintos va a fallar
+            # ademas el src se destruye al destruir el ambiente temporario.
+            shutil.copy2(src,dst)
+
+            #verificar checksum y tamaño del destino
+            dst_hash = sha256sum(dst)
+            dst_size = os.path.getsize(dst)
+
+            if src_hash != dst_hash or src_size != dst_size:
+                raise ValueError("File copy verification failed: hash or size mismatch")
+
             logging.info(f"Backup successfully created {backup_filename}")
         except FileNotFoundError as e:
             logging.error(
-                f"File not found: {e}. Ensure the source file exists before moving."
+                f"File not found: {e}. Ensure the source file exists before moving.",
+                exc_info=True,
             )
             exit(1)
         except PermissionError as e:
             logging.error(
-                f"Permission denied while moving the backup: {e}. Check directory permissions."
+                f"Permission denied while moving the backup: {e}. Check directory permissions.",
+                exc_info=True,
             )
             exit(1)
         except shutil.Error as e:
-            logging.error(f"Error during moving the backup file: {e}")
+            logging.error(f"Error during moving the backup file: {e}", exc_info=True)
             exit(1)
         except Exception as e:
-            logging.error(f"An unexpected error occurred: {e}")
+            logging.error(f"An unexpected error occurred moving ZIP: {e}", exc_info=True)
             exit(1)
 
 
