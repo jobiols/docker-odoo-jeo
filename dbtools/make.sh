@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-sd build --no-cache --rm=true -t jobiols/dbtools:1.4.8 ./
+sd build --no-cache --rm=true -t jobiols/dbtools:1.4.9 ./
 
 result=$?
 if [ "$result" -eq 0 ]; then

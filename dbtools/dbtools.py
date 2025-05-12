@@ -299,9 +299,28 @@ def backup_database(args):
             src_hash = sha256sum(src)
             src_size = os.path.getsize(src)
 
-            # Aca no se puede hacer un move porque si los filesistems son distintos va a fallar
-            # ademas el src se destruye al destruir el ambiente temporario.
-            shutil.copy2(src,dst)
+            # # Aca no se puede hacer un move porque si los filesistems son distintos va a fallar
+            # # ademas el src se destruye al destruir el ambiente temporario.
+            # shutil.copy2(src,dst)
+
+
+
+
+
+            # Parche asqueroso donde hacemos el copy con cp
+            try:
+                subprocess.run(["cp", src, dst], check=True)
+                logging.info(f"Archivo copiado correctamente de {src} a {dst} con cp Esto es un parche asqueroso")
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Error al ejecutar cp: {e}", exc_info=True)
+                exit(1)
+            except Exception as e:
+                logging.error(f"Error inesperado durante la copia con cp: {e}", exc_info=True)
+                exit(1)
+
+
+
+
 
             #verificar checksum y tamaño del destino
             dst_hash = sha256sum(dst)

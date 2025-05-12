@@ -71,7 +71,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION=17.0
-ARG ODOO_RELEASE=20250429
+ARG ODOO_RELEASE=20250512
 #ARG ODOO_SHA=76bba01e66368d00dc94c424f5f4964b8299f1b4
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -80,7 +80,11 @@ RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/od
     && rm -rf /var/lib/apt/lists/* odoo.deb
 
 # FIX error en nightly le falta una funcion en este archivo
-RUN wget -O /usr/lib/python3/dist-packages/odoo/service/model.py https://raw.githubusercontent.com/odoo/odoo/refs/heads/17.0/odoo/service/model.py
+#RUN wget -O /usr/lib/python3/dist-packages/odoo/service/model.py https://raw.githubusercontent.com/odoo/odoo/refs/heads/17.0/odoo/service/model.py
+
+#Cambiar uid y gid en odoo
+RUN groupmod -g 1100 odoo \
+ && usermod -u 1100 -g 1100 odoo
 
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
