@@ -472,12 +472,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Backup database. This parameter is mutually exclusive with --restore",
     )
-    arg_parser.add_argument(
-        "--no-neutralize",
-        action="store_true",
-        help="Make an exact database (no neutralize) if omitted, a neutralized "
-        "restore will be generated; this does not work with --backup.",
-    )
     args = arg_parser.parse_args()
     if args.restore and args.backup:
         logging.info("You must issue a backup or a restore command, not both")
