@@ -189,18 +189,14 @@ def do_restore_database(args, backup_filename):
             os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
             logging.info("Restoring Database")
             try:
-                # Ejecutar el compando psql para restaurar la bc
+                # Ejecutar el compando psql para restaurar la bd
                 process = subprocess.run(
                     [
                         "psql",
-                        "-U",
-                        f"{params.get('db_user','odoo')}",
-                        "-h",
-                        f"{params.get('db_host','db')}",
-                        "-d",
-                        f"{args.db_name}",
-                        "-p",
-                        f"{params.get('db_port', 5432)}",
+                        "-U", f"{params.get('db_user','odoo')}",
+                        "-h", f"{params.get('db_host','db')}",
+                        "-d", f"{args.db_name}",
+                        "-p", f"{params.get('db_port', 5432)}",
                     ],
                     stdout=subprocess.DEVNULL,  # No capturar stdout
                     stderr=subprocess.PIPE,
@@ -249,7 +245,8 @@ def backup_database(args):
 
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
-        os.environ["PGPASSWORD"] = params["db_password"]
+        env = os.environ.copy()
+        env["PGPASSWORD"] = params["db_password"]
         # Crear el dump
         try:
             logging.info(f"Making dump file")
@@ -257,11 +254,12 @@ def backup_database(args):
                 "pg_dump",
                 f"--dbname={params['db_name']}",
                 f"--host={params['db_host']}",
+                f"--port={params['db_port']}",
                 f"--username={params['db_user']}",
                 f"--file={tempdir}/dump.sql",
                 "--no-owner",
             ]
-            subprocess.run(cmd, check=True)
+            subprocess.run(cmd, check=True, env=env)
         except subprocess.CalledProcessError as e:
             logging.error(f"Backup Error {e}", exc_info=True)
             exit(1)
