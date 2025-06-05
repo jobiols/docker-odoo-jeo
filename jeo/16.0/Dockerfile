@@ -1,6 +1,7 @@
 # ----------------------------------------------------------------------
 # Etapa 1: Base con Python 3.10.12 (Bullseye)
-# Peso original 2.26Gb
+# Peso 20250528 2.26Gb
+#      20250604 2.31Gb
 # ----------------------------------------------------------------------
 FROM python:3.10.12-slim-bullseye AS base-image
 LABEL maintainer="Odoo S.A. <info@odoo.com>"
@@ -62,7 +63,7 @@ RUN npm install -g rtlcss
 
 # Instalar Odoo 16.0
 ENV ODOO_VERSION=16.0
-ARG ODOO_RELEASE=20250528
+ARG ODOO_RELEASE=20250604
 RUN curl -o odoo.deb -sSL "http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb" && \
     apt-get update && \
     apt-get -y install --no-install-recommends ./odoo.deb && \
