@@ -197,6 +197,7 @@ def do_restore_database(args, backup_filename):
                         "-h", f"{params.get('db_host','db')}",
                         "-d", f"{args.db_name}",
                         "-p", f"{params.get('db_port', 5432)}",
+                        "-v", "ON_ERROR_STOP=1",
                     ],
                     stdout=subprocess.DEVNULL,  # No capturar stdout
                     stderr=subprocess.PIPE,
@@ -475,7 +476,7 @@ if __name__ == "__main__":
         logging.info("You must issue a backup or a restore command, not both")
         exit()
 
-    logging.info("Database utils V1.4.8")
+    logging.info("Database utils V1.4.9")
 
     check_parameters(args)
 
