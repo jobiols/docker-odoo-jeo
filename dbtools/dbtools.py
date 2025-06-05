@@ -226,7 +226,7 @@ def do_restore_database(args, backup_filename):
                         "-h", f"{params.get('db_host','db')}",
                         "-d", "postgres",  # Conectar a postgres para aplicar roles
                         "-p", f"{params.get('db_port', 5432)}",
-                        "-v", "ON_ERROR_STOP=1",
+                        "-v", "ON_ERROR_STOP=off",
                         "-f", globals_dump_filename,
                     ],
                     stdout=subprocess.DEVNULL,
@@ -264,7 +264,6 @@ def do_restore_database(args, backup_filename):
         logging.info(f"Restoring Database '{args.db_name}' using pg_restore")
         try:
             # Ejecutar el comando pg_restore para restaurar la bd
-            # --clean drops objects before recreating them, good for clean restores.
             process = subprocess.run(
                 [
                     "pg_restore",
@@ -272,7 +271,6 @@ def do_restore_database(args, backup_filename):
                     "-h", f"{params.get('db_host','db')}",
                     "-d", f"{args.db_name}",
                     "-p", f"{params.get('db_port', 5432)}",
-                    "--clean", # Elimina objetos existentes antes de crear
                     db_dump_filename,
                 ],
                 stdout=subprocess.DEVNULL,
@@ -409,6 +407,8 @@ def backup_database(args):
             dst = backup_filename
             src_hash = sha256sum(src)
             src_size = os.path.getsize(src)
+
+            logging.info(f"copiando archivo de {src} a {dst} usando 'cp'.")
 
             # Usamos cp como en tu código original para mayor robustez en entornos Docker con volúmenes montados.
             # Esto evita posibles problemas con shutil.copy2 si los sistemas de archivos son diferentes y no soporta hardlinks.
