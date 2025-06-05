@@ -17,6 +17,7 @@ from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
 import shutil
 import logging
 import hashlib
+import time
 
 colorized = False
 
@@ -412,10 +413,10 @@ def backup_database(args):
             # Usamos cp como en tu código original para mayor robustez en entornos Docker con volúmenes montados.
             # Esto evita posibles problemas con shutil.copy2 si los sistemas de archivos son diferentes y no soporta hardlinks.
             try:
-                subprocess.run(["cp", src, dst], check=True)
+                subprocess.run(["cp", src, dst], check=True, stderr=subprocess.PIPE)
                 logging.info(f"Archivo copiado correctamente de {src} a {dst} usando 'cp'.")
             except subprocess.CalledProcessError as e:
-                logging.error(f"Error al ejecutar cp: {e.stderr.decode()}", exc_info=True)
+                logging.error(f"Error al ejecutar cp: {e.stderr.decode().strip()}", exc_info=True)
                 exit(1)
             except Exception as e:
                 logging.error(f"Error inesperado durante la copia con cp: {e}", exc_info=True)
