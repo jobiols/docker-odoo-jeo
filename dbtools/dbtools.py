@@ -2,7 +2,7 @@
 #
 # Script que se ejecuta al lanzar la imagen
 #
-
+import sys
 import os
 import ast
 import configparser
@@ -88,15 +88,15 @@ def get_last_backup_file(args):
     files = glob.glob(f"{args.base}/backup_dir/*.zip")
     if not files:
         logging.info("No backups to restore !")
-        exit(1)
+        sys.exit(1)
 
     # Filtrar los archivos por el nombre del proyecto + _prod (que es la BD default de producción)
     # Asumiendo que el nombre de la base está al principio del archivo
     backup_key = f"{params['manifest']['name']}_prod"
     filtered_files = [file for file in files if os.path.basename(file).startswith(backup_key)]
     if not filtered_files:
-        logging.info(f"No backups found for project '{backup_key}' to restore!")
-        exit(1)
+        logging.error(f"No backups found for project '{backup_key}' to restore!")
+        sys.exit(1)
 
     latest_file = max(filtered_files, key=os.path.getctime)
     logging.info(f"Choosing the latest backup {os.path.basename(latest_file)}")
@@ -119,7 +119,7 @@ def deflate_zip(args, backup_filename, tempdir):
             f"An unexpected error occurred while cleaning filestore: {e}",
             exc_info=True,
         )
-        exit(1)
+        sys.exit(1)
 
     db_dump_path = None
     globals_dump_path = None
@@ -146,7 +146,7 @@ def deflate_zip(args, backup_filename, tempdir):
 
     if not db_dump_path:
         logging.error("Database dump (dump.custom) not found in the backup file.")
-        exit(1)
+        sys.exit(1)
     if not globals_dump_path:
         logging.warning("Global objects dump (globals.sql) not found in the backup file. Roles might not be restored.")
 
@@ -159,12 +159,20 @@ def killing_db_connections(args, cur):
     sql = f"""
             SELECT pg_terminate_backend(pid)
             FROM pg_stat_activity
-            WHERE datname = '{args.db_name}';
+            WHERE datname = '{args.db_name}'
+            AND application_name IS DISTINCT FROM 'odoo_dbtools';
         """
     try:
         cur.execute(sql)
+        results = cur.fetchall()
+        for pid, app, user, client, killed in results:
+            logging.info(f"PID {pid} (app: {app}, user: {user}, client: {client}) terminated: {killed}")
+
         # Give some time for connections to terminate if any
-        conn_check_sql = f"SELECT count(*) FROM pg_stat_activity WHERE datname = '{args.db_name}';"
+        conn_check_sql = f"""SELECT count(*) FROM pg_stat_activity
+                             WHERE datname = '{args.db_name}'
+                             AND application_name IS DISTINCT FROM 'odoo_dbtools';
+                             """
         for _ in range(5): # Retry a few times
             cur.execute(conn_check_sql)
             if cur.fetchone()[0] == 0:
@@ -174,8 +182,10 @@ def killing_db_connections(args, cur):
             time.sleep(1) # Wait a second
         else:
             logging.warning(f"Some connections to {args.db_name} might still be active after retries.")
+
     except Exception as e:
-        logging.error(f"Error terminating connections: {e}", exc_info=True)
+        logging.error(f"Error terminating connections: {e}",
+                      exc_info=True,)
         # Do not exit here, continue to drop database if possible.
 
 
@@ -186,7 +196,7 @@ def drop_database(args, cur):
         cur.execute(sql)
     except Exception as e:
         logging.error(f"Error dropping database: {e}", exc_info=True)
-        exit(1)
+        sys.exit(1)
 
 
 def create_database(args, cur):
@@ -199,8 +209,9 @@ def create_database(args, cur):
     try:
         cur.execute(sql)
     except Exception as e:
-        logging.error(f"Error creating database: {e}", exc_info=True)
-        exit(1)
+        logging.error(f"Error creating database: {e}",
+                      exc_info=True,)
+        sys.exit(1)
 
 
 def do_restore_database(args, backup_filename):
@@ -237,32 +248,30 @@ def do_restore_database(args, backup_filename):
                     env=env,
                     check=True,
                 )
-                if process.returncode != 0:
-                    logging.error(
-                        f"Error restoring global objects: {process.stderr}", exc_info=True
-                    )
-                    # Decide if this is a fatal error. Often, warnings are fine if roles already exist.
-                    # For now, let's treat it as a warning unless it's a critical error.
-                    logging.warning(f"Global object restoration might have issues (Code {process.returncode}). Continuing with DB restore...")
-                else:
-                    logging.info("Global objects restored successfully.")
+                logging.info("Global objects restored successfully.")
+
             except FileNotFoundError:
                 logging.error(
-                    "The 'psql' command was not found. Ensure PostgreSQL client is installed and in the PATH.",
+                    "The 'psql' command was not found. Ensure PostgreSQL client "
+                    "is installed and in the PATH.",
                     exc_info=True,
                 )
-                exit(1)
-            except subprocess.SubprocessError as e:
+                sys.exit(1)
+
+            except subprocess.CalledProcessError as e:
                 logging.error(
-                    f"An error occurred while restoring global objects: {e}",
-                    exc_info=True,
+                   f"psql failed with exit code {e.returncode}.\nSTDERR:\n{e.stderr}",
+                    exc_info=True
                 )
-                exit(1)
+                sys.exit(1)
+
             except Exception as e:
-                logging.error(f"An unexpected error occurred restoring global objects: {e}", exc_info=True)
-                exit(1)
+                logging.error(f"An unexpected error occurred restoring global objects: {e}",
+                              exc_info=True)
+                sys.exit(1)
         else:
-            logging.warning("No globals.sql found in backup. Skipping global objects restore. Roles might need to be created manually.")
+            logging.warning("No globals.sql found in backup. Skipping global objects restore. "
+                            "Roles might need to be created manually.")
 
         # --- 2. Restaurar la base de datos principal ---
         logging.info(f"Restoring Database '{args.db_name}' using pg_restore")
@@ -284,28 +293,27 @@ def do_restore_database(args, backup_filename):
                 env=env,
                 check=True
             )
-            if process.returncode != 0:
-                logging.error(
-                    f"Error restoring database: {process.stderr}", exc_info=True
-                )
-                exit(1)
-            else:
-                logging.info(f"Database '{args.db_name}' restored successfully.")
+            logging.info(f"Database '{args.db_name}' restored successfully.")
+
         except FileNotFoundError:
             logging.error(
-                "The 'pg_restore' command was not found. Ensure PostgreSQL client is installed and in the PATH.",
+                "The 'pg_restore' command was not found. Ensure PostgreSQL "
+                "client is installed and in the PATH.",
                 exc_info=True,
             )
-            exit(1)
-        except subprocess.SubprocessError as e:
+            sys.exit(1)
+
+        except subprocess.CalledProcessError as e:
             logging.error(
-                f"An error occurred while restoring DB: {e}",
+                f"pg_restore failed with exit code {e.returncode}.\nSTDERR:\n{e.stderr}",
                 exc_info=True,
             )
-            exit(1)
+            sys.exit(1)
+
         except Exception as e:
-            logging.error(f"An unexpected error occurred restoring DB: {e}", exc_info=True)
-            exit(1)
+            logging.error(f"An unexpected error occurred restoring DB: {e}",
+                          exc_info=True)
+            sys.exit(1)
 
 def sha256sum(filename):
     h = hashlib.sha256()
@@ -329,7 +337,7 @@ def backup_database(args):
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
         env = os.environ.copy()
-        env["PGPASSWORD"] = params.get("db_password", "odoo")  
+        env["PGPASSWORD"] = params.get("db_password", "odoo")
 
         # --- 1. Crear el dump de objetos globales (roles, tablespaces) ---
         globals_dump_path = os.path.join(tempdir, "globals.sql")
@@ -346,14 +354,29 @@ def backup_database(args):
             subprocess.run(cmd_globals,
                            check=True,
                            env=env,
-                           stderr=subprocess.PIPE,)
+                           stderr=subprocess.PIPE,
+                           text=True)
             logging.info(f"Global objects dump created.")
+
+        except FileNotFoundError:
+            logging.error(
+                "The 'pg_dumpall' command was not found. Ensure PostgreSQL client "
+                "is installed and in the PATH.",
+                exc_info=True,
+            )
+            sys.exit(1)
+
         except subprocess.CalledProcessError as e:
-            logging.error(f"Error during global objects dump: {e.stderr.decode()}", exc_info=True)
-            exit(1)
+            logging.error(
+                f"pg_dumpall failed with exit code {e.returncode}.\nSTDERR:\n{e.stderr}",
+                exc_info=True,
+            )
+            sys.exit(1)
+
         except Exception as e:
-            logging.error(f"An unexpected error occurred during global objects dump: {e}", exc_info=True)
-            exit(1)
+            logging.error(f"An unexpected error occurred during global objects dump: {e}",
+                          exc_info=True)
+            sys.exit(1)
 
         # --- 2. Crear el dump de la base de datos (formato custom/binario) ---
         db_dump_path = os.path.join(tempdir, "dump.custom")
@@ -367,19 +390,28 @@ def backup_database(args):
                 f"--username={params['db_user']}",
                 f"--file={db_dump_path}",
                 "--format=custom", # Formato binario personalizado
-                # "--no-owner", # Ya no es necesario si pg_dumpall maneja los usuarios
-                # "--no-privileges", # Opcional, si no quieres guardar permisos
             ]
-            subprocess.run(cmd_db, check=True, env=env, stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Error during database dump: {e.stderr.decode()}", exc_info=True)
-            exit(1)
-        except Exception as e:
-            logging.error(f"An unexpected error occurred during database dump: {e}", exc_info=True)
-            exit(1)
+            subprocess.run(cmd_db,
+                           check=True,
+                           env=env,
+                           stderr=subprocess.PIPE,
+                           text=True,
+                           )
+            size = os.path.getsize(db_dump_path) / (1024**3)
+            logging.info(f"Database dump file {size:.2f} GB created.")
 
-        size = os.path.getsize(db_dump_path) / (1024**3)
-        logging.info(f"Database dump file {size:.2f} GB created.")
+        except subprocess.CalledProcessError as e:
+            logging.error(
+                f"pg_dump failed with exit code {e.returncode}.\nSTDERR:\n{e.stderr}",
+                exc_info=True
+            )
+            sys.exit(1)
+
+        except Exception as e:
+            logging.error(f"An unexpected error occurred during database dump: {e}",
+                          exc_info=True)
+            sys.exit(1)
+
 
         # --- 3. Crear el ZIP con ambos dumps y el filestore ---
         try:
@@ -408,8 +440,9 @@ def backup_database(args):
                     logging.warning(f"Filestore directory '{source_filestore}' not found. Skipping filestore backup.")
 
         except Exception as e:
-            logging.error(f"Error creating ZIP file: {e}", exc_info=True)
-            exit(1)
+            logging.error(f"Error creating ZIP file: {e}",
+                          exc_info=True,)
+            sys.exit(1)
 
         # --- 4. Mover el ZIP al destino final y verificar ---
         try:
@@ -423,14 +456,22 @@ def backup_database(args):
             # Usamos cp como en tu código original para mayor robustez en entornos Docker con volúmenes montados.
             # Esto evita posibles problemas con shutil.copy2 si los sistemas de archivos son diferentes y no soporta hardlinks.
             try:
-                subprocess.run(["cp", src, dst], check=True, stderr=subprocess.PIPE)
+                subprocess.run(["cp", src, dst],
+                               check=True,
+                               stderr=subprocess.PIPE,
+                               text=True,
+                               )
                 logging.info(f"Archivo copiado correctamente de {src} a {dst} usando 'cp'.")
+
             except subprocess.CalledProcessError as e:
-                logging.error(f"Error al ejecutar cp: {e.stderr.decode().strip()}", exc_info=True)
-                exit(1)
+                logging.error(f"Error al ejecutar cp: {e.stderr}",
+                              exc_info=True)
+                sys.exit(1)
+
             except Exception as e:
-                logging.error(f"Error inesperado durante la copia con cp: {e}", exc_info=True)
-                exit(1)
+                logging.error(f"Error inesperado durante la copia con cp: {e}",
+                              exc_info=True,)
+                sys.exit(1)
 
             # Verificar checksum y tamaño del destino
             dst_hash = sha256sum(dst)
@@ -445,19 +486,21 @@ def backup_database(args):
                 f"File not found: {e}. Ensure the source file exists before moving.",
                 exc_info=True,
             )
-            exit(1)
+            sys.exit(1)
         except PermissionError as e:
             logging.error(
                 f"Permission denied while moving the backup: {e}. Check directory permissions.",
                 exc_info=True,
             )
-            exit(1)
+            sys.exit(1)
         except shutil.Error as e:
-            logging.error(f"Error during moving the backup file: {e}", exc_info=True)
-            exit(1)
+            logging.error(f"Error during moving the backup file: {e}",
+                          exc_info=True)
+            sys.exit(1)
         except Exception as e:
-            logging.error(f"An unexpected error occurred moving ZIP: {e}", exc_info=True)
-            exit(1)
+            logging.error(f"An unexpected error occurred moving ZIP: {e}",
+                          exc_info=True)
+            sys.exit(1)
 
 
 def cleanup_backup_files(args):
@@ -540,7 +583,7 @@ def check_parameters(args):
             logging.info(f"Auto-detected database name: {args.db_name}")
         else:
             logging.error("Could not determine database name. Please provide it using --db-name.")
-            exit(1)
+            sys.exit(1)
 
     # Leer datos del archivo odoo.conf
     config_file_path = f"{args.base}/config/odoo.conf"
@@ -571,7 +614,7 @@ def restore_database(args):
     backup_filename = get_zip_filename(args)
     if not os.path.exists(backup_filename):
         logging.error(f"Backup file not found: {backup_filename}")
-        exit(1)
+        sys.exit(1)
 
     logging.info(
         f"Restoring {os.path.basename(backup_filename)} into Database {args.db_name}"
@@ -585,15 +628,19 @@ def restore_database(args):
             port=params["db_port"],
             password=params["db_password"],
             dbname="postgres", # Connect to postgres to perform administrative tasks
-            connect_timeout=10 # Add a timeout for connection
+            connect_timeout=10, # Add a timeout for connection
+            application_name="odoo_dbtools"
         )
     except psycopg2.OperationalError as ex:
         logging.error(f"Failed to connect to PostgreSQL as user '{params['db_user']}' on host '{params['db_host']}:{params['db_port']}'. "
-                      f"Please check database credentials, host, port, and ensure the PostgreSQL service is running. Error: {ex}")
-        exit(1)
+                      f"Please check database credentials, host, port, and ensure the PostgreSQL service is running. Error: {ex}",
+                      exc_info=True,
+                      )
+        sys.exit(1)
     except Exception as ex:
-        logging.error(f"An unexpected error occurred while connecting to the database: {ex}", exc_info=True)
-        exit(1)
+        logging.error(f"An unexpected error occurred while connecting to the database: {ex}",
+                      exc_info=True)
+        sys.exit(1)
 
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
@@ -656,10 +703,10 @@ if __name__ == "__main__":
     if not (args.restore or args.backup):
         logging.error("You must specify either --backup or --restore.")
         arg_parser.print_help()
-        exit(1)
+        sys.exit(1)
     if args.restore and args.backup:
         logging.error("You must issue a backup or a restore command, not both.")
-        exit(1)
+        sys.exit(1)
 
     logging.info("Database utils V1.5.0 (Binary Format & Global Objects)")
 
