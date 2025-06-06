@@ -90,9 +90,9 @@ def get_last_backup_file(args):
         logging.info("No backups to restore !")
         exit(1)
 
-    # Filtrar los archivos por el nombre de la base de datos a restaurar
+    # Filtrar los archivos por el nombre del proyecto + _prod (que es la BD default de producción)
     # Asumiendo que el nombre de la base está al principio del archivo
-    backup_key = args.db_name
+    backup_key = f"{params['manifest']['name']}_prod"
     filtered_files = [file for file in files if os.path.basename(file).startswith(backup_key)]
     if not filtered_files:
         logging.info(f"No backups found for database '{args.db_name}' to restore!")
