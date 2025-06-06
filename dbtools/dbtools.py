@@ -213,7 +213,8 @@ def do_restore_database(args, backup_filename):
         db_dump_filename, globals_dump_filename = deflate_zip(args, backup_filename, tempdir)
 
         # Configurar variable de entorno para la contraseña de la BD
-        os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
+        env = os.environ.copy()
+        env["PGPASSWORD"] = params.get("db_password", "odoo")
 
         # --- 1. Restaurar objetos globales (roles, tablespaces, etc.) ---
         if globals_dump_filename and os.path.exists(globals_dump_filename):
@@ -233,6 +234,8 @@ def do_restore_database(args, backup_filename):
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE,
                     text=True,
+                    env=env,
+                    check=True,
                 )
                 if process.returncode != 0:
                     logging.error(
@@ -263,9 +266,6 @@ def do_restore_database(args, backup_filename):
 
         # --- 2. Restaurar la base de datos principal ---
         logging.info(f"Restoring Database '{args.db_name}' using pg_restore")
-
-        # Configurar variable de entorno para la contraseña de la BD
-        os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
         try:
             # Ejecutar el comando pg_restore para restaurar la bd
             process = subprocess.run(
@@ -281,6 +281,8 @@ def do_restore_database(args, backup_filename):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 text=True,
+                env=env,
+                check=True
             )
             if process.returncode != 0:
                 logging.error(
@@ -327,7 +329,7 @@ def backup_database(args):
     # Crear un temp donde armar el backup
     with tempfile.TemporaryDirectory() as tempdir:
         env = os.environ.copy()
-        env["PGPASSWORD"] = params["db_password"]
+        env["PGPASSWORD"] = params.get("db_password", "odoo")  
 
         # --- 1. Crear el dump de objetos globales (roles, tablespaces) ---
         globals_dump_path = os.path.join(tempdir, "globals.sql")
@@ -341,7 +343,10 @@ def backup_database(args):
                 f"--username={params['db_user']}",
                 f"--file={globals_dump_path}",
             ]
-            subprocess.run(cmd_globals, check=True, env=env, stderr=subprocess.PIPE)
+            subprocess.run(cmd_globals,
+                           check=True,
+                           env=env,
+                           stderr=subprocess.PIPE,)
             logging.info(f"Global objects dump created.")
         except subprocess.CalledProcessError as e:
             logging.error(f"Error during global objects dump: {e.stderr.decode()}", exc_info=True)
