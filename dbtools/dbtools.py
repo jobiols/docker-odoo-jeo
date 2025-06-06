@@ -125,6 +125,7 @@ def deflate_zip(args, backup_filename, tempdir):
     globals_dump_path = None
 
     # Open the ZIP file and extract contents
+    logging.info(f"Extracting zip contents for {args.db_name}.")
     with ZipFile(backup_filename, "r") as zip_ref:
         for member in zip_ref.infolist():
             if member.filename.startswith("filestore/"):
