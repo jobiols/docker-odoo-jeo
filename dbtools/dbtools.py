@@ -271,6 +271,7 @@ def do_restore_database(args, backup_filename):
                     "-h", f"{params.get('db_host','db')}",
                     "-d", f"{args.db_name}",
                     "-p", f"{params.get('db_port', 5432)}",
+                    "-j", f"{params.get('db_jobs', 4)}",
                     db_dump_filename,
                 ],
                 stdout=subprocess.DEVNULL,
@@ -627,6 +628,13 @@ if __name__ == "__main__":
         "--restore",
         action="store_true",
         help="Restore database. This parameter is mutually exclusive with --backup.",
+    )
+    arg_parser.add_argument(
+        "--db-jobs",
+        type=int,
+        default=4,
+        help="Number of jobs to use for parallel restore. Default: 4. "
+        "This is only used when restoring a database.",
     )
     arg_parser.add_argument(
         "--backup",
