@@ -262,6 +262,9 @@ def do_restore_database(args, backup_filename):
 
         # --- 2. Restaurar la base de datos principal ---
         logging.info(f"Restoring Database '{args.db_name}' using pg_restore")
+
+        # Configurar variable de entorno para la contraseña de la BD
+        os.environ["PGPASSWORD"] = params.get("db_password", "odoo")
         try:
             # Ejecutar el comando pg_restore para restaurar la bd
             process = subprocess.run(
