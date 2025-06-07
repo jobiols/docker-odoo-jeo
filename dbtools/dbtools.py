@@ -502,6 +502,8 @@ def backup_database(args):
                           exc_info=True)
             sys.exit(1)
 
+    logging.info(f"Database {args.db_name} successfully backed up to {backup_filename}")
+
 
 def cleanup_backup_files(args):
     """Eliminar los backups antiguos que tengan más de args.days_to_keep de
@@ -625,18 +627,20 @@ def restore_database(args):
         conn = psycopg2.connect(
             user=params["db_user"],
             host=params["db_host"],
-            port=params["db_port"],
-            password=params["db_password"],
+            port=params.get("db_port",5432),
+            password=params.get("db_password","odoo"),
             dbname="postgres", # Connect to postgres to perform administrative tasks
             connect_timeout=10, # Add a timeout for connection
             application_name="odoo_dbtools"
         )
+
     except psycopg2.OperationalError as ex:
         logging.error(f"Failed to connect to PostgreSQL as user '{params['db_user']}' on host '{params['db_host']}:{params['db_port']}'. "
                       f"Please check database credentials, host, port, and ensure the PostgreSQL service is running. Error: {ex}",
                       exc_info=True,
                       )
         sys.exit(1)
+
     except Exception as ex:
         logging.error(f"An unexpected error occurred while connecting to the database: {ex}",
                       exc_info=True)
@@ -653,6 +657,9 @@ def restore_database(args):
 
     cur.close()
     conn.close()
+    
+    logging.info(f"Database {args.db_name} successfully restored from {backup_filename}")
+
 
 
 if __name__ == "__main__":
@@ -715,9 +722,9 @@ if __name__ == "__main__":
 
     if args.restore:
         restore_database(args)
-        logging.info(f"Database {args.db_name} successfully restored from {os.path.basename(get_zip_filename(args))}")
 
     if args.backup:
+        # do the backup
         backup_database(args)
+        # Cleanup old backups if specified with --days-to-keep retention policy
         cleanup_backup_files(args)
-        logging.info(f"Database {args.db_name} successfully backed up to {os.path.basename(get_zip_filename(args))}")
