@@ -451,17 +451,18 @@ def backup_database(args):
             src_hash = sha256sum(src)
             src_size = os.path.getsize(src)
 
-            logging.info(f"copiando archivo de {src} a {dst} usando 'cp'.")
+            logging.info(f"copiando archivo de {src} a {dst}.")
 
-            # Usamos cp como en tu código original para mayor robustez en entornos Docker con volúmenes montados.
-            # Esto evita posibles problemas con shutil.copy2 si los sistemas de archivos son diferentes y no soporta hardlinks.
+            # Usamos cp para mayor robustez en entornos Docker con volúmenes montados.
+            # Esto evita posibles problemas con shutil.copy2 si los sistemas de archivos son
+            # diferentes.
             try:
                 subprocess.run(["cp", src, dst],
                                check=True,
                                stderr=subprocess.PIPE,
                                text=True,
                                )
-                logging.info(f"Archivo copiado correctamente de {src} a {dst} usando 'cp'.")
+                logging.info(f"Archivo copiado correctamente de {src} a {dst}.")
 
             except subprocess.CalledProcessError as e:
                 logging.error(f"Error al ejecutar cp: {e.stderr}",
@@ -657,7 +658,7 @@ def restore_database(args):
 
     cur.close()
     conn.close()
-    
+
     logging.info(f"Database {args.db_name} successfully restored from {backup_filename}")
 
 
