@@ -4,7 +4,7 @@ LABEL maintainer="Odoo S.A. <jorge.obiols@gmail.com>"
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
@@ -16,6 +16,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
+        git \
         dirmngr \
         fonts-noto-cjk \
         gnupg \
@@ -129,5 +130,13 @@ RUN \
     && mkdir -p ${ADDONS_DIR} \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
+
+COPY ./requirements /req
+RUN pip install --break-system-packages -r /req/adhoc-aeroo_reports.txt
+# RUN pip install --break-system-packages -r /req/odoo-argentina-ce.txt
+RUN pip install --break-system-packages -r /req/odoo-argentina-ee.txt
+RUN pip install --break-system-packages -r /req/odoo-argentina.txt
+RUN pip install --break-system-packages -r /req/requirements.txt
+RUN rm -r /req
 
 USER odoo
