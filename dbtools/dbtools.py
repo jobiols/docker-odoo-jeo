@@ -70,7 +70,7 @@ def get_zip_filename(args):
     else:
         # RESTORE
         if args.zipfile:
-            return args.zipfile
+            return f"{args.base}/backup_dir/{args.zipfile}"
         else:
             # no tengo el nombre del backup a restaurar, busco el úlimo
             return get_last_backup_file(args)

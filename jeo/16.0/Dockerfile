@@ -63,17 +63,21 @@ RUN npm install -g rtlcss
 
 # Instalar Odoo 16.0
 ENV ODOO_VERSION=16.0
-ARG ODOO_RELEASE=20250604
-RUN curl -o odoo.deb -sSL "http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb" && \
-    apt-get update && \
-    apt-get -y install --no-install-recommends ./odoo.deb && \
-    rm -rf /var/lib/apt/lists/* odoo.deb
 
-# Ajustar UID/GID de usuario odoo para que sea 1100
-RUN groupmod -g 1100 odoo && \
-    usermod -u 1100 -g 1100 odoo
+ARG ODOO_RELEASE=20250613
+#ARG ODOO_SHA=1fb02a432e076dd71aca7a7611a07223919356b9
+RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
+#    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends ./odoo.deb \
+    && rm -rf /var/lib/apt/lists/* odoo.deb
 
-# Copiar entrypoint y configuración de Odoo
+#Cambiar uid y gid en odoo
+RUN groupmod -g 1100 odoo \
+  && usermod -u 1100 -g 1100 odoo
+
+# Copy entrypoint script and Odoo configuration file
+
 COPY ./entrypoint.sh /
 COPY ./odoo.conf /etc/odoo/
 
