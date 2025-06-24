@@ -217,7 +217,7 @@ def create_database(args, cur):
 def do_restore_database(args, backup_filename):
     """Restore database, global objects, and filestore"""
 
-    with tempfile.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory(dir="/var/tmp") as tempdir:
 
         # Extraer el Filestore al filestore de la estructura y los dumps al temp dir
         logging.info("Deflating zip. Extracting binary dump, global objects, and filestore.")
@@ -336,7 +336,7 @@ def backup_database(args):
     )
 
     # Crear un temp donde armar el backup
-    with tempfile.TemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory(dir="/var/tmp") as tempdir:
         env = os.environ.copy()
         env["PGPASSWORD"] = params.get("db_password", "odoo")
 
