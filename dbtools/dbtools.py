@@ -280,6 +280,7 @@ def do_restore_database(args, backup_filename):
             process = subprocess.run(
                 [
                     "pg_restore",
+                    "--exit-on-error",
                     "-U", f"{params.get('db_user','odoo')}",
                     "-h", f"{params.get('db_host','db')}",
                     "-d", f"{args.db_name}",
@@ -287,7 +288,7 @@ def do_restore_database(args, backup_filename):
                     "-j", f"{params.get('db_jobs', 4)}",
                     db_dump_filename,
                 ],
-                stdout=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 env=env,
