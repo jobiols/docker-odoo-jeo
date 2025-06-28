@@ -1,64 +1,71 @@
-# Etapa 1: Compilación
+# 0.749
+# con fuentes 1.82
+
+#######################################
+# Etapa 1: compilar Python 3.10.12
+#######################################
 FROM debian:bullseye-slim AS builder
-
 ARG PYTHON_VERSION=3.10.12
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    wget \
-    curl \
-    libssl-dev \
-    zlib1g-dev \
-    libbz2-dev \
-    libreadline-dev \
-    libsqlite3-dev \
-    libffi-dev \
-    libncursesw5-dev \
-    xz-utils \
-    tk-dev \
-    ca-certificates
+# Dependencias de compilación
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential curl ca-certificates \
+    libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
+    libsqlite3-dev libffi-dev libncursesw5-dev xz-utils tk-dev
 
-# Descargar y compilar Python
-RUN curl -O https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-    tar -xf Python-${PYTHON_VERSION}.tgz && \
-    cd Python-${PYTHON_VERSION} && \
-    ./configure --enable-optimizations --prefix=/opt/python-${PYTHON_VERSION} && \
-    make -j$(nproc) && \
-    make install
+# Descargar y compilar
+WORKDIR /tmp
+RUN curl -SL https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz \
+    | tar -xz \
+ && cd Python-${PYTHON_VERSION} \
+ && ./configure --prefix=/opt/python --enable-optimizations --with-ensurepip=install \
+ && make -j"$(nproc)" \
+ && make altinstall
 
-# Etapa 2: Imagen final mínima
+# Podar cachés y tests para achicar tamaño
+RUN find /opt/python -name '__pycache__' -type d -exec rm -rf {} + \
+ && rm -rf /opt/python/lib/python*/test
+
+# Limpiar build‑deps
+RUN apt-get purge -y --auto-remove build-essential curl \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* /tmp/*
+
+#######################################
+# Etapa 2: runtime mínimo
+#######################################
 FROM debian:bullseye-slim
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 ARG PYTHON_VERSION=3.10.12
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/opt/python/bin:${PATH}"
+# Generate locale C.UTF-8 for postgres and general locale data
+ENV LANG=C.UTF-8
 
-# Instalar solo las dependencias necesarias para ejecutar Python
-RUN apt-get update && apt-get install -y \
-    libssl1.1 \
-    zlib1g \
-    libbz2-1.0 \
-    libreadline8 \
-    libsqlite3-0 \
-    libffi7 \
-    libncursesw6 \
-    xz-utils \
-    tk \
-    && rm -rf /var/lib/apt/lists/*
+# Solo librerías necesarias en runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libssl1.1 libffi7 libbz2-1.0 libreadline8 \
+    libsqlite3-0 libncursesw6 zlib1g xz-utils tk \
+ && rm -rf /var/lib/apt/lists/*
 
-# Copiar Python desde el builder
-COPY --from=builder /opt/python-${PYTHON_VERSION} /opt/python-${PYTHON_VERSION}
+# Copiar Python construido desde la etapa de compilación
+COPY --from=builder /opt/python /opt/python
 
-# Usar ese Python como default
-ENV PATH="/opt/python-${PYTHON_VERSION}/bin:$PATH"
+# Symlinks útiles
+RUN ln -s /opt/python/bin/python3.10 /usr/local/bin/python3 \
+ && ln -s /opt/python/bin/pip3.10     /usr/local/bin/pip
 
-# Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
+# Instalar wkhtmltopdf según la arquitectura
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
-        git \
+        git && \
     if [ -z "${TARGETARCH}" ]; then \
         TARGETARCH="$(dpkg --print-architecture)"; \
     fi; \
@@ -73,37 +80,109 @@ RUN apt-get update && \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
-# install latest postgresql-client
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-    && GNUPGHOME="$(mktemp -d)" \
-    && export GNUPGHOME \
-    && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-    && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-    && gpgconf --kill all \
-    && rm -rf "$GNUPGHOME" \
-    && apt-get update  \
-    && apt-get install --no-install-recommends -y postgresql-client \
-    && rm -f /etc/apt/sources.list.d/pgdg.list \
+# Instalar cliente de PostgreSQL
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg ca-certificates \
+ && echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+ && export GNUPGHOME="$(mktemp -d)" \
+ && gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 \
+ && gpg --batch --armor --export B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8 > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
+ && gpgconf --kill all \
+ && rm -rf "$GNUPGHOME" \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client \
+ && rm -f /etc/apt/sources.list.d/pgdg.list \
+ && rm -rf /var/lib/apt/lists/*
+
+# Install rtlcss (soporte RTL, escribir lenguajes de derecha a izq como árabe o hebreo) hacer esto en la primera etapa
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        npm && \
+    # Instalar rtlcss
+    npm install -g rtlcss
+
+# instalar fuentes de odoo community para chino y japonés
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        fonts-noto-cjk
+
+# Instalar odoo community
+ENV ODOO_VERSION=16.0
+ARG ODOO_RELEASE=${ODOO_RELEASE}
+
+RUN git clone --depth 1 --branch ${ODOO_VERSION} \
+    https://github.com/odoo/odoo.git /usr/lib/python3/dist-packages/odoo
+
+# Cambiar uid y gid en odoo para que coincidan con el usuario del host
+RUN groupadd -g 1100 odoo && \
+    useradd -u 1100 -g odoo -m -s /bin/bash odoo
+
+# Copy entrypoint script and Odoo configuration file, and wait-for-psql script
+COPY ./entrypoint.sh /
+COPY ./odoo.conf /etc/odoo/
+COPY ./wait-for-psql.py /usr/local/bin/wait-for-psql.py
+
+# Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
+RUN chown odoo /etc/odoo/odoo.conf \
+    && mkdir -p /mnt/extra-addons \
+    && chown -R odoo /mnt/extra-addons
+VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+
+# Expose Odoo services
+EXPOSE 8069 8071 8072
+
+# Set the default config file
+ENV ODOO_RC=/etc/odoo/odoo.conf
+
+ENV ETC_DIR=/opt/odoo/etc
+ENV DATA_DIR=/opt/odoo/data
+ENV LOG_DIR=/var/log/odoo
+ENV BKP_DIR=/var/odoo/backups
+ENV ADDONS_DIR=/opt/odoo/custom-addons
+ENV ODOO_RC=${ETC_DIR}/odoo.conf
+RUN \
+       mkdir -p ${ETC_DIR} \
+    && mkdir -p ${DATA_DIR} \
+    && mkdir -p ${LOG_DIR} \
+    && mkdir -p ${BKP_DIR} \
+    && mkdir -p ${ADDONS_DIR} \
+    && chown -R odoo.odoo /opt/odoo \
+    && chown -R odoo.odoo /var/odoo
+
+# Instala las dependencias del sistema operativo, incluyendo las de desarrollo de PostgreSQL.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libldap2-dev \
+    libsasl2-dev \
+    libffi-dev \
+    libssl-dev \
+    libev-dev \
+    pkg-config \
+    curl \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Instala las dependencias de Python.
+# Este bloque ya está correcto y no necesita cambios.
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir "cython<3.0" && \
+    pip install \
+        --no-cache-dir \
+        --no-build-isolation \
+        -r /usr/lib/python3/dist-packages/odoo/requirements.txt
+
+
+# Set default user when running the container
+# USER odoo
+
+# ENTRYPOINT ["/entrypoint.sh"]
+# CMD ["odoo"]
 
 
 
 
-
-
-
-# FROM debian:bullseye-slim AS base-image
-# LABEL maintainer="Odoo S.A. <info@odoo.com>"
-
-# SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
-
-# # Generate locale C.UTF-8 for postgres and general locale data
-# ENV LANG=C.UTF-8
-
-# # Retrieve the target architecture to install the correct wkhtmltopdf package
-# ARG TARGETARCH
 
 # # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 # RUN apt-get update && \
@@ -146,19 +225,6 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 #     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
 #     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
-# # install latest postgresql-client
-# RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-#     && GNUPGHOME="$(mktemp -d)" \
-#     && export GNUPGHOME \
-#     && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
-#     && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "${repokey}" \
-#     && gpg --batch --armor --export "${repokey}" > /etc/apt/trusted.gpg.d/pgdg.gpg.asc \
-#     && gpgconf --kill all \
-#     && rm -rf "$GNUPGHOME" \
-#     && apt-get update  \
-#     && apt-get install --no-install-recommends -y postgresql-client \
-#     && rm -f /etc/apt/sources.list.d/pgdg.list \
-#     && rm -rf /var/lib/apt/lists/*
 
 # # Install rtlcss (on Debian buster)
 # RUN npm install -g rtlcss
