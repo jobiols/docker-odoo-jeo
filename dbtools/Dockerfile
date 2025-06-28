@@ -2,6 +2,7 @@ FROM python:3.12-alpine
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 # Instalar dependencias
+# postgresql-client en Alpine incluye pg_dump, psql, pg_restore, pg_dumpall
 RUN apk add --no-cache \
             postgresql-client \
             ca-certificates \
