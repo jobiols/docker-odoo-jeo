@@ -74,10 +74,12 @@ def get_zip_filename(args):
     else:
         # RESTORE
         if args.zipfile:
+
             # Asegurarse de que la ruta base esté incluida si no es absoluta
             if not os.path.isabs(args.zipfile):
                 return os.path.join(f"{args.base}/backup_dir", args.zipfile)
             return args.zipfile
+
         else:
             # no tengo el nombre del backup a restaurar, busco el úlimo
             return get_last_backup_file(args)
