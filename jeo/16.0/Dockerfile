@@ -1,4 +1,6 @@
-# terminado 1.82GB
+# terminado      1.82GB
+# quitar el .git 1.65GB
+# 1.93GB
 
 ################################################################################
 # Etapa 1: Builder - Compilar Python y preparar dependencias de compilación
@@ -20,11 +22,11 @@ RUN apt-get update && \
         libbz2-dev libreadline-dev libsqlite3-dev libffi-dev \
         libncursesw5-dev xz-utils tk-dev \
         # Para compilar dependencias de Odoo
-        libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libev-dev libpq-dev \
+        libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libev-dev libpq-dev swig \
         # Para clonar el repo de Odoo
         git
 
-# --- PASO 1.2: Compilar Python (tu código, sin cambios) ---
+# --- PASO 1.2: Compilar Python
 WORKDIR /tmp
 RUN curl -SL https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz | tar -xz && \
     cd Python-${PYTHON_VERSION} && \
@@ -36,18 +38,30 @@ RUN curl -SL https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON
 # Usamos un Virtual Environment para instalar las dependencias de Odoo.
 # Esto nos permite copiar solo los paquetes instalados a la etapa final,
 # sin necesidad de tener las herramientas de compilación en la imagen final.
+# además estamos eliminando el .git para reducir el tamaño de la imagen final.
 ENV ODOO_VERSION=16.0
-RUN git clone --depth 1 --branch ${ODOO_VERSION} https://github.com/odoo/odoo.git /opt/odoo 
+RUN git clone --depth 1 --branch ${ODOO_VERSION} https://github.com/odoo/odoo.git /opt/odoo && \
+    rm -rf /opt/odoo/.git
 
 RUN python3.10 -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel && \
     # Instalar Cython < 3.0 dentro del venv
     /opt/venv/bin/pip install --no-cache-dir "cython<3.0" && \
-    # Instalar los requerimientos de Odoo usando el venv
+    # Instalar los requerimientos de odoo/odoo usando el venv
     /opt/venv/bin/pip install \
         --no-cache-dir \
         --no-build-isolation \
         -r /opt/odoo/requirements.txt
+
+COPY ./requirements /req
+RUN /opt/venv/bin/pip install \
+    # Instalar los requerimientos adicionales de Odoo en el venv librerias de odoo argentina, etc
+    --no-cache-dir \
+    --no-build-isolation \
+    -r /req/odoo-argentina.txt  \
+    -r /req/odoo-argentina-ce.txt  \
+    -r /req/adhoc-aeroo_reports.txt  \
+    -r /req/requirements.txt
 
 ################################################################################
 # Etapa 2: Final/Runtime - Imagen mínima para ejecutar Odoo
@@ -58,7 +72,7 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 # El PATH debe apuntar al venv
-ENV PATH="/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ENV PATH="/opt/venv/bin:/opt/python/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # --- PASO 2.1: Instalar dependencias de RUNTIME de una sola vez ---
 # - Solo librerías (.so) necesarias, no paquetes -dev.
@@ -87,7 +101,7 @@ RUN apt-get update && \
     # Instalar rtlcss
     npm install -g rtlcss && npm cache clean --force
 
-# --- PASO 2.2: Instalar wkhtmltopdf (tu código, sin cambios) ---
+# --- PASO 2.2: Instalar wkhtmltopdf
 # Este bloque ahora funcionará porque las dependencias ya están instaladas.
 ARG TARGETARCH
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -105,12 +119,12 @@ RUN \
     apt-get install -y --no-install-recommends ./wkhtmltox.deb && \
     rm wkhtmltox.deb
 
-# ... resto del Dockerfile sin cambios ...
 # --- PASO 2.3: Copiar los artefactos de la etapa builder ---
+COPY --from=builder /opt/python /opt/python
 COPY --from=builder /opt/odoo /usr/lib/python3/dist-packages/odoo
 COPY --from=builder /opt/venv /opt/venv
 
-# --- PASO 2.4: Configuración de Odoo
+# --- PASO 2.4: Configuración del usuario Odoo
 RUN groupadd -g 1100 odoo && \
     useradd -u 1100 -g odoo -m -s /bin/bash odoo
 
