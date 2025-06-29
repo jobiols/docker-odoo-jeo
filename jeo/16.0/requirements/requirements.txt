@@ -1,18 +1,18 @@
-num2words==0.5.10
-pandas==2.2.2
-paramiko==3.1.0
-astor
+# num2words==0.5.10
+# pandas==2.2.2
+# paramiko==3.1.0
+# astor
 
-# LOPEZ hr_attendance_zktecho
-pyzk
-# LOPEZ izi_data
-sqlparse
+# # LOPEZ hr_attendance_zktecho
+# pyzk
+# # LOPEZ izi_data
+# sqlparse
 
-# upgrade utils
-git+https://github.com/odoo/upgrade-util@master
-markdown
+# # upgrade utils
+# git+https://github.com/odoo/upgrade-util@master
+# markdown
 
-meli @ git+https://github.com/mercadolibre/python-sdk.git@09406bd544b974b379fea4818bd1040c7f147a40
+# meli @ git+https://github.com/mercadolibre/python-sdk.git@09406bd544b974b379fea4818bd1040c7f147a40
 
-unrar
-openpyxl
+# unrar
+# openpyxl
