@@ -121,7 +121,7 @@ RUN \
 
 # --- PASO 2.3: Copiar los artefactos de la etapa builder ---
 COPY --from=builder /opt/python /opt/python
-COPY --from=builder /opt/odoo /usr/lib/python3/dist-packages/odoo
+COPY --from=builder /opt/odoo /usr/bin/odoo
 COPY --from=builder /opt/venv /opt/venv
 
 # --- PASO 2.4: Configuración del usuario Odoo
