@@ -12,7 +12,11 @@ sqlparse
 git+https://github.com/odoo/upgrade-util@master
 markdown
 
-meli @ git+https://github.com/mercadolibre/python-sdk.git@09406bd544b974b379fea4818bd1040c7f147a40
+#meli @ git+https://github.com/mercadolibre/python-sdk.git@09406bd544b974b379fea4818bd1040c7f147a40
+
+#cambiamos a nuestra librería meli-sdk
+meli @ git+https://github.com/quilsoft-org/meli-sdk.git
+
 
 unrar
 openpyxl
