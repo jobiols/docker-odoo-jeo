@@ -5,7 +5,7 @@ SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG=en_US.UTF-8
-ENV ODOO_VERSION=19.0
+ENV ODOO_VERSION=master
 ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
@@ -111,8 +111,6 @@ ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
-#    && mkdir -p ${LOG_DIR} \
-#    && mkdir -p ${BKP_DIR} \
     && mkdir -p ${ADDONS_DIR} \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
