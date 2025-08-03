@@ -55,10 +55,6 @@ RUN apt-get update && \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
-# upgrade pip
-# --------------------------------------------------------------------------------------------------
-RUN pip install --upgrade pip
-
 # install latest postgresql-client
 # --------------------------------------------------------------------------------------------------
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
@@ -84,6 +80,13 @@ RUN apt-get install -y libldap2-dev libsasl2-dev
 # Install rtlcss para soporte de LTR (escritura de derecha a izquierda)
 RUN npm install -g rtlcss
 
+# upgrade pip hay que crear un ambiente viertual para actualizar pip o compilar python 
+# --------------------------------------------------------------------------------------------------
+# RUN pip install --upgrade pip
+
+# para compatibilidad con dependencias antiguas de gevent
+RUN pip install "Cython<3.0" "setuptools<60" wheel
+
 # Create ODOO system user "
 # --------------------------------------------------------------------------------------------------
 RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --group odoo
@@ -94,24 +97,33 @@ RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --gro
 RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}
 ENV PATH="$PATH:/usr/lib/python3/dist-packages/odoo"
 
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    python3-dev build-essential gcc
+
+RUN pip install --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2"
+
+# Install Odoo requirements
+RUN pip install -r /usr/lib/python3/dist-packages/odoo/requirements.txt
+
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
 # RUN mkdir -p /mnt/extra-addons \
 #     && chown -R odoo /mnt/extra-addons
 # VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
-# Expose Odoo services
+# # Expose Odoo services
 EXPOSE 8069 8071 8072
 
 ENV ETC_DIR=/opt/odoo/etc
 ENV DATA_DIR=/opt/odoo/data
-#ENV LOG_DIR=/var/log/odoo
-#ENV BKP_DIR=/var/odoo/backups
+ENV LOG_DIR=/var/log/odoo
+ENV BKP_DIR=/var/odoo/backups
 ENV ADDONS_DIR=/opt/odoo/custom-addons
 ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
     && mkdir -p ${ADDONS_DIR} \
+    && mkdir -p ${BKP_DIR} \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
 
@@ -120,16 +132,14 @@ COPY entrypoint.sh /
 COPY odoo.conf $ETC_DIR/
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
-RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    python3-dev build-essential
 
 # Instalar todas las dependencias
 COPY ./requirements /req
-RUN pip3 install -r /req/odoo-core-requirements.txt
+# RUN pip3 install -r /req/odoo-core-requirements.txt
 # RUN pip3 install -r /req/odoo-argentina.txt
 # RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 # RUN pip3 install -r /req/requirements.txt
-#RUN rm -r /req
+RUN rm -r /req
 
 # No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
 # hay que armar la enterprise de cero...
