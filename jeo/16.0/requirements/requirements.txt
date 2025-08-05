@@ -5,6 +5,7 @@ astor
 
 # LOPEZ hr_attendance_zktecho
 pyzk
+
 # LOPEZ izi_data
 sqlparse
 
@@ -16,7 +17,6 @@ markdown
 
 #cambiamos a nuestra librería meli-sdk
 meli @ git+https://github.com/quilsoft-org/meli-sdk.git
-
 
 unrar
 openpyxl

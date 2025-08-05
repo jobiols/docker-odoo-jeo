@@ -67,6 +67,9 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 # Install rtlcss (on Debian buster)
 RUN npm install -g rtlcss
 
+# Antes de instlar odoo actualizamos xlswriter porque odoo instala una version vieja
+RUN pip install xlsxwriter>=3.2.5
+
 # Install Odoo
 ENV ODOO_VERSION=16.0
 ARG ODOO_RELEASE=20250801
