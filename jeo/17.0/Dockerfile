@@ -1,10 +1,15 @@
-FROM ubuntu:jammy AS base-image
+FROM ubuntu:jammy
 LABEL maintainer="Odoo S.A. <info@odoo.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG=en_US.UTF-8
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends locales \
+ && locale-gen en_US.UTF-8 \
+ && update-locale LANG=en_US.UTF-8 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
@@ -37,6 +42,7 @@ RUN apt-get update && \
         python3-watchdog \
         python3-xlrd \
         python3-xlwt \
+        file \
         xz-utils && \
     if [ -z "${TARGETARCH}" ]; then \
         TARGETARCH="$(dpkg --print-architecture)"; \
@@ -71,7 +77,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION=17.0
-ARG ODOO_RELEASE=20250801
+ARG ODOO_RELEASE=20250809
 #ARG ODOO_SHA=76bba01e66368d00dc94c424f5f4964b8299f1b4
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -113,9 +119,6 @@ CMD ["odoo"]
 ###############################################################################
 ############################ Fin de base image ################################
 ###############################################################################
-
-FROM base-image
-LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
