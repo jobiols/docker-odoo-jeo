@@ -151,6 +151,9 @@ RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN pip3 install -r /req/requirements.txt
 RUN rm -r /req
 
+# Instalando odoorpc para control de infraestructura
+RUN pip3 install odoorpc
+
 # No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
 # hay que armar la enterprise de cero...
 
