@@ -7,6 +7,8 @@ pandas==2.1.2
 SQLAlchemy==2.0.32
 openpyxl
 
+# Para altas telecom
+OdooRPC
 # PyMySQL
 # requests>=2.28.2
 # urllib3==1.26.5
