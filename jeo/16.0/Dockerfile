@@ -72,7 +72,7 @@ RUN pip install xlsxwriter>=3.2.5
 
 # Install Odoo
 ENV ODOO_VERSION=16.0
-ARG ODOO_RELEASE=20250818
+ARG ODOO_RELEASE=20250901
 #ARG ODOO_SHA=1fb02a432e076dd71aca7a7611a07223919356b9
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
@@ -138,11 +138,11 @@ RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && rm get-pip.py
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    git python3-dev build-essential
+    git python3-dev build-essential swig
 
 COPY ./requirements /req
-RUN pip3 install -r /req/requirements.txt
-RUN pip3 install -r /req/odoo-argentina.txt
+RUN pip3 install --no-cache-dir -r /req/requirements.txt
+RUN pip3 install --no-cache-dir -r /req/odoo-argentina.txt
 #RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN rm -r /req
 
