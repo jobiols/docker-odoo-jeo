@@ -157,7 +157,7 @@ RUN chmod -R 777 /usr/local/lib/python3.9/dist-packages/pyafipws
 RUN sed -i  "s/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/" /etc/ssl/openssl.cnf
 
 # reportlab esta dando un deprecation warning por lo que lo actualizamos
-RUN pip3 install --no-cache-dir --upgrade reportlab
+RUN pip3 install --no-cache-dir --upgrade reportlab>=4.4.3
 
 
 USER odoo
