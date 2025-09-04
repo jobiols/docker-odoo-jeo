@@ -141,7 +141,7 @@ RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential swig
 
 COPY ./requirements /req
-RUN pip3 install --no-cache-dir -r /req/requirements.txt
+RUN pip3 install --no-cache-dir --use-pep517 -r /req/requirements.txt
 RUN pip3 install --no-cache-dir -r /req/odoo-argentina.txt
 #RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN rm -r /req

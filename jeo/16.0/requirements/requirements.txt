@@ -20,3 +20,6 @@ meli @ git+https://github.com/quilsoft-org/meli-sdk.git
 
 unrar
 openpyxl
+
+#actualizar requests
+requests==2.32.5
