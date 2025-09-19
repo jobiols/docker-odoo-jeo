@@ -5,7 +5,7 @@ SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG=en_US.UTF-8
-ENV ODOO_VERSION=master
+ENV ODOO_VERSION=19.0
 ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
@@ -80,7 +80,7 @@ RUN apt-get install -y libldap2-dev libsasl2-dev
 # Install rtlcss para soporte de LTR (escritura de derecha a izquierda)
 RUN npm install -g rtlcss
 
-# upgrade pip hay que crear un ambiente viertual para actualizar pip o compilar python 
+# upgrade pip hay que crear un ambiente viertual para actualizar pip o compilar python
 # --------------------------------------------------------------------------------------------------
 # RUN pip install --upgrade pip
 
