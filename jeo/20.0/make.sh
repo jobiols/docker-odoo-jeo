@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-sd build --rm=true -t jobiols/odoo-jeo:20.0 ./
+sudo docker build --rm=true --build-arg ODOO_RELEASE=$(date -u +%Y%m%d) -t jobiols/odoo-jeo:20.0 ./
 result=$?
 if [ "$result" -eq 0 ]; then
     sd push jobiols/odoo-jeo:20.0

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+echo "Odoo $ODOO_VERSION Release $ODOO_RELEASE by jeo Software"
 
 if [ -v PASSWORD_FILE ]; then
     PASSWORD="$(< $PASSWORD_FILE)"

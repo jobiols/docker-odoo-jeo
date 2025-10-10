@@ -1,4 +1,4 @@
-FROM ubuntu:noble AS base-image
+FROM ubuntu:24.04 AS base-image
 LABEL maintainer="Odoo S.A. <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -72,7 +72,7 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION=18.0
-ARG ODOO_RELEASE=20250930
+ARG ODOO_RELEASE=20251010
 #ARG ODOO_SHA=952a8f7148a7652809546ee7acdc2d66c09e04d9
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \

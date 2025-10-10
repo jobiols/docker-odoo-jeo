@@ -7,6 +7,8 @@ SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 ENV LANG=en_US.UTF-8
 ENV ODOO_VERSION=19.0
 ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
+ARG ODOO_RELEASE
+ENV ODOO_RELEASE=${ODOO_RELEASE}
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
@@ -132,8 +134,7 @@ COPY entrypoint.sh /
 COPY odoo.conf $ETC_DIR/
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
-
-# Instalar todas las dependencias
+# Instalar todas las dependencias de los modulos a instalar
 COPY ./requirements /req
 # RUN pip3 install -r /req/odoo-core-requirements.txt
 # RUN pip3 install -r /req/odoo-argentina.txt
@@ -141,9 +142,5 @@ COPY ./requirements /req
 # RUN pip3 install -r /req/requirements.txt
 RUN rm -r /req
 
-# No instalamos las librerias de argentina-ce para que no choquen con las de enterprise
-# hay que armar la enterprise de cero...
-
 USER odoo
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
