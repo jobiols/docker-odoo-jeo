@@ -1,0 +1,3 @@
+pandas
+defusedxml
+num2words
