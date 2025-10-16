@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS base-image
+FROM ubuntu:noble AS base-image
 LABEL maintainer="Odoo S.A. <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -138,5 +138,6 @@ RUN pip install --break-system-packages -r /req/odoo-argentina-ee.txt
 RUN pip install --break-system-packages -r /req/odoo-argentina.txt
 RUN pip install --break-system-packages -r /req/requirements.txt
 RUN rm -r /req
-
+# esto es un parche porque la version que instala odoo falla, le fuerzo la última
+RUN pip install --break-system-packages --force-reinstall pytz
 USER odoo
