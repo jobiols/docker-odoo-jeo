@@ -1,3 +1,4 @@
 pandas
 defusedxml
 num2words
+pika
