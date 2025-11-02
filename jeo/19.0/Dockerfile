@@ -3,7 +3,7 @@ LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
-# Generate locale C.UTF-8 for postgres and general locale data
+# Generate locale C.UTF-8 for postgres and general locale data.
 ENV LANG=en_US.UTF-8
 ENV ODOO_VERSION=19.0
 ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
