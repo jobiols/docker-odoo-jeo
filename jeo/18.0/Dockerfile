@@ -1,5 +1,6 @@
+# Noble Numbat 24.04 LTS
 FROM ubuntu:noble AS base-image
-LABEL maintainer="Odoo S.A. <jorge.obiols@gmail.com>"
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
