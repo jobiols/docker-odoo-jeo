@@ -1,4 +1,4 @@
-FROM ubuntu:jammy
+FROM ubuntu:noble
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
@@ -13,36 +13,35 @@ ENV ODOO_RELEASE=${ODOO_RELEASE}
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
 
-# Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
-# --------------------------------------------------------------------------------------------------
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
+        git \
         dirmngr \
         fonts-noto-cjk \
         gnupg \
         libssl-dev \
         node-less \
         npm \
-        python3-magic \
-        python3-num2words \
-        python3-odf \
-        python3-pdfminer \
+#        python3-magic \
+#        python3-num2words \
+#        python3-odf \
+#        python3-pdfminer \
         python3-pip \
-        python3-phonenumbers \
-        python3-pyldap \
-        python3-qrcode \
-        python3-renderpm \
-        python3-setuptools \
-        python3-slugify \
-        python3-vobject \
-        python3-watchdog \
-        python3-xlrd \
-        python3-xlwt \
-        xz-utils \
-        git && \
+#        python3-phonenumbers \
+#        python3-pyldap \
+#        python3-qrcode \
+#        python3-renderpm \
+#        python3-setuptools \
+#        python3-slugify \
+#        python3-vobject \
+#        python3-watchdog \
+#        python3-xlrd \
+#        python3-xlwt \
+        python3-venv \
+        xz-utils && \
     if [ -z "${TARGETARCH}" ]; then \
         TARGETARCH="$(dpkg --print-architecture)"; \
     fi; \
@@ -57,9 +56,12 @@ RUN apt-get update && \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
+# Instalar un entorno virtual para evitar conflictos con versiones de pip y setuptools
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 # install latest postgresql-client
-# --------------------------------------------------------------------------------------------------
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ noble-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
     && GNUPGHOME="$(mktemp -d)" \
     && export GNUPGHOME \
     && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
@@ -72,37 +74,22 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/a
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
 
-# Agregar los headers para que psycopg2 pueda compilar
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list
+# # Agregar los headers para que psycopg2 pueda compilar
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ noble-pgdg main' > /etc/apt/sources.list.d/pgdg.list
 RUN apt-get update && apt-get install -y libpq-dev
 
-# Agregar biblotecas requeridas para compilar python-ldap
+# # Agregar biblotecas requeridas para compilar python-ldap
 RUN apt-get install -y libldap2-dev libsasl2-dev
 
-# Install rtlcss para soporte de LTR (escritura de derecha a izquierda)
-RUN npm install -g rtlcss
-
-# upgrade pip hay que crear un ambiente viertual para actualizar pip o compilar python
-# --------------------------------------------------------------------------------------------------
-# RUN pip install --upgrade pip
-
-# para compatibilidad con dependencias antiguas de gevent
-RUN pip install "Cython<3.0" "setuptools<60" wheel
-
-# Create ODOO system user "
-# --------------------------------------------------------------------------------------------------
+# Create ODOO system user The user should NOT be added to the sudo'ers group.
 RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --group odoo
-#The user should NOT be added to the sudo'ers group.
 
 # Install Odoo latest version
-# --------------------------------------------------------------------------------------------------
 RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}
 ENV PATH="$PATH:/usr/lib/python3/dist-packages/odoo"
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     python3-dev build-essential gcc
-
-RUN pip install --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2"
 
 # Install Odoo requirements
 RUN pip install -r /usr/lib/python3/dist-packages/odoo/requirements.txt
@@ -112,7 +99,7 @@ RUN pip install -r /usr/lib/python3/dist-packages/odoo/requirements.txt
 #     && chown -R odoo /mnt/extra-addons
 # VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
-# # Expose Odoo services
+# Expose Odoo services
 EXPOSE 8069 8071 8072
 
 ENV ETC_DIR=/opt/odoo/etc
