@@ -1,4 +1,4 @@
-pyOpenSSL==29.0.0
+
 M2Crypto
 httplib2>=0.7
 git+https://github.com/pysimplesoap/pysimplesoap@stable_py3k
