@@ -1,5 +1,6 @@
-FROM ubuntu:noble as base-image
-MAINTAINER Odoo S.A. <info@odoo.com>
+# Noble Numbat 24.04 LTS
+FROM ubuntu:noble AS base-image
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -71,13 +72,17 @@ RUN npm install -g rtlcss
 
 # Install Odoo
 ENV ODOO_VERSION=19.0
-ARG ODOO_RELEASE=20251102
+ARG ODOO_RELEASE=20251107
 #ARG ODOO_SHA=eeba5130e7d34caa1c8459df926f1a207c314857
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
 #    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
     && apt-get -y install --no-install-recommends ./odoo.deb \
     && rm -rf /var/lib/apt/lists/* odoo.deb
+
+#Cambiar uid y gid en odoo
+RUN groupmod -g 1100 odoo \
+ && usermod -u 1100 -g 1100 odoo
 
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
@@ -101,7 +106,6 @@ COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
 
 ###############################################################################
 ############################ Fin de base image ################################
@@ -130,7 +134,7 @@ RUN \
 COPY ./requirements /req
 # RUN pip install --break-system-packages -r /req/adhoc-aeroo_reports.txt
 # RUN pip install --break-system-packages -r /req/odoo-argentina-ce.txt
-RUN pip install --break-system-packages -r /req/odoo-argentina-ee.txt
+#RUN pip install --break-system-packages -r /req/odoo-argentina-ee.txt
 #RUN pip install --break-system-packages -r /req/odoo-argentina.txt
 RUN pip install --break-system-packages -r /req/requirements.txt
 RUN rm -r /req
