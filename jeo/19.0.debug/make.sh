@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-sd build --rm=true -t jobiols/odoo-jeo:19.0.debug ./
+sd build --no-cache --pull --rm=true -t jobiols/odoo-jeo:19.0.debug ./
 result=$?
 if [ "$result" -eq 0 ]; then
     sd push jobiols/odoo-jeo:19.0.debug

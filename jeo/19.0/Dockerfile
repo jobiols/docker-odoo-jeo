@@ -1,20 +1,17 @@
-FROM ubuntu:jammy
+# Noble Numbat 24.04 LTS
+FROM ubuntu:noble AS base-image
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG=en_US.UTF-8
-ENV ODOO_VERSION=19.0
-ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
-ARG ODOO_RELEASE
-ENV ODOO_RELEASE=${ODOO_RELEASE}
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
 
 # Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
-# --------------------------------------------------------------------------------------------------
+
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
@@ -41,8 +38,7 @@ RUN apt-get update && \
         python3-watchdog \
         python3-xlrd \
         python3-xlwt \
-        xz-utils \
-        git && \
+        xz-utils && \
     if [ -z "${TARGETARCH}" ]; then \
         TARGETARCH="$(dpkg --print-architecture)"; \
     fi; \
@@ -58,8 +54,7 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
 # install latest postgresql-client
-# --------------------------------------------------------------------------------------------------
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ noble-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
     && GNUPGHOME="$(mktemp -d)" \
     && export GNUPGHOME \
     && repokey='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8' \
@@ -72,48 +67,54 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/a
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
 
-# Agregar los headers para que psycopg2 pueda compilar
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list
-RUN apt-get update && apt-get install -y libpq-dev
-
-# Agregar biblotecas requeridas para compilar python-ldap
-RUN apt-get install -y libldap2-dev libsasl2-dev
-
-# Install rtlcss para soporte de LTR (escritura de derecha a izquierda)
+# Install rtlcss (on Debian buster)
 RUN npm install -g rtlcss
 
-# upgrade pip hay que crear un ambiente viertual para actualizar pip o compilar python
-# --------------------------------------------------------------------------------------------------
-# RUN pip install --upgrade pip
+# Install Odoo
+ENV ODOO_VERSION=19.0
+ARG ODOO_RELEASE=20251107
+#ARG ODOO_SHA=eeba5130e7d34caa1c8459df926f1a207c314857
+RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
+#    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
+    && apt-get update \
+    && apt-get -y install --no-install-recommends ./odoo.deb \
+    && rm -rf /var/lib/apt/lists/* odoo.deb
 
-# para compatibilidad con dependencias antiguas de gevent
-RUN pip install "Cython<3.0" "setuptools<60" wheel
+#Cambiar uid y gid en odoo
+RUN groupmod -g 1100 odoo \
+ && usermod -u 1100 -g 1100 odoo
 
-# Create ODOO system user "
-# --------------------------------------------------------------------------------------------------
-RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --group odoo
-#The user should NOT be added to the sudo'ers group.
-
-# Install Odoo latest version
-# --------------------------------------------------------------------------------------------------
-RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}
-ENV PATH="$PATH:/usr/lib/python3/dist-packages/odoo"
-
-RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    python3-dev build-essential gcc
-
-RUN pip install --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2"
-
-# Install Odoo requirements
-RUN pip install -r /usr/lib/python3/dist-packages/odoo/requirements.txt
+# Copy entrypoint script and Odoo configuration file
+COPY ./entrypoint.sh /
+COPY ./odoo.conf /etc/odoo/
 
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
-# RUN mkdir -p /mnt/extra-addons \
-#     && chown -R odoo /mnt/extra-addons
-# VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+RUN chown odoo /etc/odoo/odoo.conf \
+    && mkdir -p /mnt/extra-addons \
+    && chown -R odoo /mnt/extra-addons
+VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
 
-# # Expose Odoo services
+# Expose Odoo services
 EXPOSE 8069 8071 8072
+
+# Set the default config file
+ENV ODOO_RC=/etc/odoo/odoo.conf
+
+COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
+
+# Set default user when running the container
+USER odoo
+
+ENTRYPOINT ["/entrypoint.sh"]
+
+###############################################################################
+############################ Fin de base image ################################
+###############################################################################
+
+FROM base-image
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
+
+USER root
 
 ENV ETC_DIR=/opt/odoo/etc
 ENV DATA_DIR=/opt/odoo/data
@@ -124,23 +125,19 @@ ENV ODOO_RC=${ETC_DIR}/odoo.conf
 RUN \
        mkdir -p ${ETC_DIR} \
     && mkdir -p ${DATA_DIR} \
-    && mkdir -p ${ADDONS_DIR} \
+    && mkdir -p ${LOG_DIR} \
     && mkdir -p ${BKP_DIR} \
+    && mkdir -p ${ADDONS_DIR} \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
 
-# Copy entrypoint script and Odoo configuration file
-COPY entrypoint.sh /
-COPY odoo.conf $ETC_DIR/
-COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
-
-# Instalar todas las dependencias de los modulos a instalar
 COPY ./requirements /req
-#RUN pip3 install -r /req/odoo-core-requirements.txt
-#RUN pip3 install -r /req/odoo-argentina.txt
-#RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/requirements.txt
+# RUN pip install --break-system-packages -r /req/adhoc-aeroo_reports.txt
+# RUN pip install --break-system-packages -r /req/odoo-argentina-ce.txt
+#RUN pip install --break-system-packages -r /req/odoo-argentina-ee.txt
+#RUN pip install --break-system-packages -r /req/odoo-argentina.txt
+RUN pip install --break-system-packages -r /req/requirements.txt
 RUN rm -r /req
-
+# esto es un parche porque la version que instala odoo falla, le fuerzo la última
+RUN pip install --break-system-packages --force-reinstall pytz
 USER odoo
-ENTRYPOINT ["/entrypoint.sh"]
