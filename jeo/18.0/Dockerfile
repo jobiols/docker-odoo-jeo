@@ -1,11 +1,16 @@
-# Noble Numbat 24.04 LTS
-FROM ubuntu:noble AS base-image
+# Noble Numbat 24.04 LTS // python 3.12.3
+FROM ubuntu:noble
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
 # Generate locale C.UTF-8 for postgres and general locale data
 ENV LANG=en_US.UTF-8
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends locales \
+ && locale-gen en_US.UTF-8 \
+ && update-locale LANG=en_US.UTF-8 \
+ && rm -rf /var/lib/apt/lists/*
 
 # Retrieve the target architecture to install the correct wkhtmltopdf package
 ARG TARGETARCH
@@ -107,13 +112,11 @@ COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
+CMD ["odoo"]
 
 ###############################################################################
 ############################ Fin de base image ################################
 ###############################################################################
-
-FROM base-image
-LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 USER root
 
@@ -132,13 +135,22 @@ RUN \
     && chown -R odoo.odoo /opt/odoo \
     && chown -R odoo.odoo /var/odoo
 
+# instalar el ultimo pip
+# RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+#     && python3 get-pip.py \
+#     && rm get-pip.py
+
+RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
+    git python3-dev build-essential
+
 COPY ./requirements /req
-RUN pip install --break-system-packages -r /req/adhoc-aeroo_reports.txt
-# RUN pip install --break-system-packages -r /req/odoo-argentina-ce.txt
-RUN pip install --break-system-packages -r /req/odoo-argentina-ee.txt
-RUN pip install --break-system-packages -r /req/odoo-argentina.txt
+RUN pip3 install --break-system-packages -r /req/odoo-argentina.txt
+
+RUN pip3 install --break-system-packages -r /req/adhoc-aeroo_reports.txt
+
 RUN pip install --break-system-packages -r /req/requirements.txt
 RUN rm -r /req
+
 # esto es un parche porque la version que instala odoo falla, le fuerzo la última
-RUN pip install --break-system-packages --force-reinstall pytz
+#RUN pip install --break-system-packages --force-reinstall pytz
 USER odoo
