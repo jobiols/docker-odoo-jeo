@@ -10,8 +10,11 @@ COPY ./extract_dist-local-packages.sh /
 RUN apt-get update && apt-get install -y git
 
 # install wdb
-RUN git clone https://${GITHUB_TOKEN}@github.com/quilsoft-org/wdb.git /opt/wdb \
+RUN git clone https://github.com/jobiols/wdb.git /opt/wdb \
     && pip install --no-cache-dir --break-system-packages /opt/wdb/client \
     && rm -rf /opt/wdb
+
+# sin esto no anda el wdb
+RUN pip install --break-system-packages debugpy
 
 USER odoo
