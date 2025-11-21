@@ -1,4 +1,4 @@
-pandas
-defusedxml
-num2words
-pika
+pandas==2.3.3
+defusedxml==0.7.1
+num2words==0.5.10
+pika==1.3.2

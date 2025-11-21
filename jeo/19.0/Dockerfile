@@ -135,12 +135,11 @@ COPY odoo.conf $ETC_DIR/
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
 # Instalar todas las dependencias de los modulos a instalar
-COPY ./requirements /req
 #RUN pip3 install -r /req/odoo-core-requirements.txt
 #RUN pip3 install -r /req/odoo-argentina.txt
 #RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-RUN pip3 install -r /req/requirements.txt
-RUN rm -r /req
+COPY ./requirements /req
+RUN pip3 install -r /req/requirements.txt && rm -r /req
 
 USER odoo
 ENTRYPOINT ["/entrypoint.sh"]
