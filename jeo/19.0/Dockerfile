@@ -102,7 +102,7 @@ ENV PATH="$PATH:/usr/lib/python3/dist-packages/odoo"
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     python3-dev build-essential gcc
 
-RUN pip install --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2"
+RUN pip install --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2" "zope.event==6.1"
 
 # Install Odoo requirements
 RUN pip install -r /usr/lib/python3/dist-packages/odoo/requirements.txt
