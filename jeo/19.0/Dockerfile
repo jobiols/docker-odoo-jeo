@@ -1,20 +1,23 @@
+# Usa la imagen base de Ubuntu
 FROM ubuntu:jammy
 LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
-# Generate locale C.UTF-8 for postgres and general locale data
+# Configuración de locale y versiones
 ENV LANG=en_US.UTF-8
 ENV ODOO_VERSION=19.0
-ENV ODOO_HOME=/usr/lib/python3/dist-packages/odoo
 ARG ODOO_RELEASE
 ENV ODOO_RELEASE=${ODOO_RELEASE}
 
-# Retrieve the target architecture to install the correct wkhtmltopdf package
-ARG TARGETARCH
+# --- NUEVO: Definir la ruta del entorno virtual y del home de Odoo ---
+ENV ODOO_HOME=/odoo
+ENV VENV_PATH=/odoo/venv
 
-# Install some deps, lessc and less-plugin-clean-css, and wkhtmltopdf
 # --------------------------------------------------------------------------------------------------
+# PASO 1: INSTALAR DEPENDENCIAS DEL SISTEMA (NO-PYTHON) Y WKHTMLTOPDF
+# --------------------------------------------------------------------------------------------------
+# Se han quitado todos los paquetes 'python3-*' de aquí. Serán instalados con pip.
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
@@ -26,26 +29,17 @@ RUN apt-get update && \
         libssl-dev \
         node-less \
         npm \
-        python3-magic \
-        python3-num2words \
-        python3-odf \
-        python3-pdfminer \
+        python3-dev \
+        build-essential \
+        gcc \
+        libpq-dev \
+        libldap2-dev \
+        libsasl2-dev \
         python3-pip \
-        python3-phonenumbers \
-        python3-pyldap \
-        python3-qrcode \
-        python3-renderpm \
-        python3-setuptools \
-        python3-slugify \
-        python3-vobject \
-        python3-watchdog \
-        python3-xlrd \
-        python3-xlwt \
+        python3-venv \
         xz-utils \
         git && \
-    if [ -z "${TARGETARCH}" ]; then \
-        TARGETARCH="$(dpkg --print-architecture)"; \
-    fi; \
+    TARGETARCH=${TARGETARCH:-$(dpkg --print-architecture)} && \
     WKHTMLTOPDF_ARCH=${TARGETARCH} && \
     case ${TARGETARCH} in \
     "amd64") WKHTMLTOPDF_ARCH=amd64 && WKHTMLTOPDF_SHA=967390a759707337b46d1c02452e2bb6b2dc6d59  ;; \
@@ -57,7 +51,8 @@ RUN apt-get update && \
     && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
     && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
-# install latest postgresql-client
+# --------------------------------------------------------------------------------------------------
+# PASO 2: INSTALAR CLIENTE DE POSTGRESQL Y RTLSS (SIN CAMBIOS)
 # --------------------------------------------------------------------------------------------------
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
     && GNUPGHOME="$(mktemp -d)" \
@@ -71,75 +66,98 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/a
     && apt-get install --no-install-recommends -y postgresql-client \
     && rm -f /etc/apt/sources.list.d/pgdg.list \
     && rm -rf /var/lib/apt/lists/*
-
-# Agregar los headers para que psycopg2 pueda compilar
-RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/apt/sources.list.d/pgdg.list
-RUN apt-get update && apt-get install -y libpq-dev
-
-# Agregar biblotecas requeridas para compilar python-ldap
-RUN apt-get install -y libldap2-dev libsasl2-dev
-
-# Install rtlcss para soporte de LTR (escritura de derecha a izquierda)
 RUN npm install -g rtlcss
 
-# upgrade pip hay que crear un ambiente viertual para actualizar pip o compilar python
 # --------------------------------------------------------------------------------------------------
-# RUN pip install --upgrade pip
-
-# para compatibilidad con dependencias antiguas de gevent
-RUN pip install "Cython<3.0" "setuptools<60" wheel
-
-# Create ODOO system user "
+# PASO 3: CREAR USUARIO, ENTORNO VIRTUAL Y ACTIVARLO
 # --------------------------------------------------------------------------------------------------
-RUN adduser --system --quiet --shell=/bin/bash --home=/odoo --gecos 'ODOO' --group odoo
-#The user should NOT be added to the sudo'ers group.
+# Crear el usuario y su directorio home, que contendrá tanto Odoo como el venv
+RUN adduser --system --quiet --shell=/bin/bash --home=${ODOO_HOME} --gecos 'ODOO' --group odoo
+# Crear el entorno virtual como el usuario root, pero asignarlo al usuario odoo
+RUN python3 -m venv ${VENV_PATH} && chown -R odoo:odoo ${VENV_PATH}
+# Activar el venv para todas las instrucciones futuras. Esto es clave.
+ENV PATH="${VENV_PATH}/bin:${PATH}"
 
-# Install Odoo latest version
 # --------------------------------------------------------------------------------------------------
-RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}
-ENV PATH="$PATH:/usr/lib/python3/dist-packages/odoo"
+# PASO 4: INSTALAR TODAS LAS DEPENDENCIAS DE PYTHON DENTRO DEL VENV (ESTRATEGIA MULTI-PASO)
+# --------------------------------------------------------------------------------------------------
+# Actualizar pip para tener la última versión
+RUN pip install --no-cache-dir --upgrade pip
 
-RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
-    python3-dev build-essential gcc
+# -- SUB-PASO 4.1: INSTALAR GEVENT CON HERRAMIENTAS ANTIGUAS --
+# Instalar las versiones antiguas de las herramientas de construcción que gevent necesita
+RUN pip install --no-cache-dir "Cython<3.0" "setuptools<60" wheel
+# Instalar gevent y su dependencia directa, forzando a pip a usar las herramientas que acabamos de instalar
+RUN pip install --no-cache-dir --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2"
 
-RUN pip install --no-build-isolation "gevent==21.8.0" "greenlet==1.1.2" "zope.event==6.1"
+# -- SUB-PASO 4.2: ACTUALIZAR HERRAMIENTAS PARA EL RESTO DE PAQUETES --
+# Ahora que lo antiguo está instalado, actualizamos las herramientas para los paquetes modernos
+RUN pip install --no-cache-dir --upgrade setuptools wheel
 
-# Install Odoo requirements
-RUN pip install -r /usr/lib/python3/dist-packages/odoo/requirements.txt
+# -- SUB-PASO 4.3: INSTALAR EL RESTO DE LOS REQUERIMIENTOS --
+# Instalar dependencias que antes se instalaban con apt, ahora con pip
+RUN pip install --no-cache-dir \
+    python-magic \
+    num2words \
+    odfpy \
+    pdfminer.six \
+    phonenumbers \
+    pyldap \
+    qrcode \
+    Pillow \
+    reportlab \
+    vobject \
+    watchdog \
+    xlrd \
+    xlwt
 
-# Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
-# RUN mkdir -p /mnt/extra-addons \
-#     && chown -R odoo /mnt/extra-addons
-# VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+#    python-slugify-unicode \
 
-# # Expose Odoo services
-EXPOSE 8069 8071 8072
+# Instalar Odoo
+RUN git clone --depth 1 --branch ${ODOO_VERSION} https://www.github.com/odoo/odoo ${ODOO_HOME}/odoo-src
+ENV PATH="${ODOO_HOME}/odoo-src:${PATH}"
 
+# Instalar el resto de los requerimientos de Odoo Core.
+# Pip ignorará gevent/greenlet porque ya están instalados.
+# Usará las herramientas modernas que instalamos en el paso 4.2.
+RUN pip install --no-cache-dir -r ${ODOO_HOME}/odoo-src/requirements.txt
+
+# Instalar los requerimientos personalizados de tus addons
+COPY ./requirements /req
+RUN pip install --no-cache-dir -r /req/requirements.txt && rm -r /req
+
+# --------------------------------------------------------------------------------------------------
+# PASO 5: CONFIGURAR DIRECTORIOS, PERMISOS Y ENTRYPOINT
+# --------------------------------------------------------------------------------------------------
+# Definir variables de entorno para los directorios
 ENV ETC_DIR=/opt/odoo/etc
 ENV DATA_DIR=/opt/odoo/data
 ENV LOG_DIR=/var/log/odoo
 ENV BKP_DIR=/var/odoo/backups
 ENV ADDONS_DIR=/opt/odoo/custom-addons
 ENV ODOO_RC=${ETC_DIR}/odoo.conf
-RUN \
-       mkdir -p ${ETC_DIR} \
-    && mkdir -p ${DATA_DIR} \
-    && mkdir -p ${ADDONS_DIR} \
-    && mkdir -p ${BKP_DIR} \
-    && chown -R odoo.odoo /opt/odoo \
-    && chown -R odoo.odoo /var/odoo
+# Crear directorios. /opt/odoo se usa para configuraciones y datos, no para el código
+RUN mkdir -p ${ETC_DIR} ${DATA_DIR} ${ADDONS_DIR} ${BKP_DIR} \
+    && chown -R odoo:odoo /opt/odoo
+# Crear directorio de logs
+RUN mkdir -p ${LOG_DIR} && chown -R odoo:odoo ${LOG_DIR}
+# Crear directorio de backups
+RUN mkdir -p /var/odoo && chown -R odoo:odoo /var/odoo
 
-# Copy entrypoint script and Odoo configuration file
+# Copiar artefactos de configuración
 COPY entrypoint.sh /
 COPY odoo.conf $ETC_DIR/
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
+RUN chmod +x /entrypoint.sh /usr/local/bin/wait-for-psql.py
 
-# Instalar todas las dependencias de los modulos a instalar
-#RUN pip3 install -r /req/odoo-core-requirements.txt
-#RUN pip3 install -r /req/odoo-argentina.txt
-#RUN pip3 install -r /req/adhoc-aeroo_reports.txt
-COPY ./requirements /req
-RUN pip3 install -r /req/requirements.txt && rm -r /req
+# Exponer puertos
+EXPOSE 8069 8071 8072
 
+# Cambiar al usuario final
 USER odoo
+
+# El entrypoint ahora usará el python y pip del venv gracias a la variable de entorno PATH
 ENTRYPOINT ["/entrypoint.sh"]
+
+# El comando se pasa desde docker-compose.yml
+# CMD ["odoo-bin", "-c", "/opt/odoo/etc/odoo.conf"]
