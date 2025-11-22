@@ -71,8 +71,13 @@ RUN npm install -g rtlcss
 # --------------------------------------------------------------------------------------------------
 # PASO 3: CREAR USUARIO, ENTORNO VIRTUAL Y ACTIVARLO
 # --------------------------------------------------------------------------------------------------
-# Crear el usuario y su directorio home, que contendrá tanto Odoo como el venv
-RUN adduser --system --quiet --shell=/bin/bash --home=${ODOO_HOME} --gecos 'ODOO' --group odoo
+# Crear el usuario 'odoo' con UID y GID 1100, junto con su directorio home.
+# Se utilizan estos IDs para que coincidan con los del usuario en el host,
+# evitando conflictos de permisos al montar volúmenes desde el host hacia el contenedor.
+RUN addgroup --gid 1100 odoo && \
+    adduser --system --uid 1100 --gid 1100 \
+    --shell /bin/bash --home ${ODOO_HOME} --gecos "ODOO" odoo
+
 # Crear el entorno virtual como el usuario root, pero asignarlo al usuario odoo
 RUN python3 -m venv ${VENV_PATH} && chown -R odoo:odoo ${VENV_PATH}
 # Activar el venv para todas las instrucciones futuras. Esto es clave.
