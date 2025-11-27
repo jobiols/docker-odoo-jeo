@@ -54,12 +54,14 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main' > /et
 # Install rtlcss (on Debian buster)
 RUN npm install -g rtlcss
 
+# Instalar odoo user con usuario y grupo con uid/gid 1100
+RUN groupadd -g 1100 odoo && \
+    useradd -u 1100 -g 1100 -d /var/lib/odoo -s /usr/sbin/nologin -r odoo
+
 # Install Odoo
 ENV ODOO_VERSION=14.0
 ENV ODOO_RELEASE=latest
-#ARG ODOO_SHA=dc5475c3c9f9affc2f795be7922efc887d4a5d29
 RUN curl -o odoo.deb -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.${ODOO_RELEASE}_all.deb \
-#    && echo "${ODOO_SHA} odoo.deb" | sha1sum -c - \
     && apt-get update \
     && apt-get -y install --no-install-recommends ./odoo.deb \
     && rm -rf /var/lib/apt/lists/* odoo.deb
