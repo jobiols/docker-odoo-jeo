@@ -1,5 +1,5 @@
-FROM debian:bullseye-slim AS base-image
-LABEL maintainer="Odoo S.A. <info@odoo.com>"
+FROM debian:bullseye-slim
+LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
 
 SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
 
@@ -21,7 +21,7 @@ RUN apt-get update && \
         python3-pdfminer \
         python3-pip \
         python3-phonenumbers \
-        python3-pyldap \
+        python3-ldap \
         python3-qrcode \
         python3-renderpm \
         python3-setuptools \
@@ -84,20 +84,7 @@ ENV ODOO_RC=/etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 
-# Set default user when running the container
-USER odoo
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
-
-###############################################################################
-############################ Fin de base image ################################
-###############################################################################
-
-FROM base-image
-LABEL maintainer="Jorge Obiols <jorge.obiols@gmail.com>"
-
-USER root
 
 ENV ETC_DIR=/opt/odoo/etc
 ENV DATA_DIR=/opt/odoo/data
@@ -134,3 +121,6 @@ RUN pip3 install -r /req/adhoc-aeroo_reports.txt
 RUN rm -r /req
 
 USER odoo
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["odoo"]
