@@ -16,7 +16,7 @@ CD="/mnt/old/home/jobiols/git-repos/docker-odoo-jeo/jeo"
 
 set -e
 
-versions=( 17.0 18.0 19.0 20.0 )
+versions=( 16.0 17.0 18.0 19.0 20.0 )
 
 for version in ${versions[@]}
 do
