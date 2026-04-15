@@ -126,10 +126,7 @@ COPY odoo.conf $ETC_DIR/
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 RUN chmod +x /entrypoint.sh /usr/local/bin/wait-for-psql.py
 
-# copiar el decorador wasd que funcionará solo para sulh
-COPY wasd.py ${ODOO_HOME}/odoo-src/odoo/
-#RUN echo "from . import wasd" >> ${ODOO_HOME}/odoo-src/odoo/init.py
-#RUN chown -R odoo.odoo ${ODOO_HOME}/odoo-src/odoo/wasd.py
+RUN pip install --no-cache-dir wasp
 
 EXPOSE 8069 8071 8072
 
