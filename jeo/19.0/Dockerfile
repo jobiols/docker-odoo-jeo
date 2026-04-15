@@ -126,7 +126,9 @@ COPY odoo.conf $ETC_DIR/
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
 RUN chmod +x /entrypoint.sh /usr/local/bin/wait-for-psql.py
 
-RUN pip install --no-cache-dir wasp
+# Agregarr libreria wasd para control de hitos en sulh
+COPY wasd-1.0.0-py3-none-any.whl /tmp/
+RUN pip install /tmp/wasd-1.0.0-py3-none-any.whl && rm -rf /tmp/wasd-1.0.0-py3-none-any.whl
 
 EXPOSE 8069 8071 8072
 
