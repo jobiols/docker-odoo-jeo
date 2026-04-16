@@ -18,7 +18,8 @@ ENV VENV_PATH=/odoo/venv
 # PASO 1: INSTALAR DEPENDENCIAS DEL SISTEMA
 # --------------------------------------------------------------------------------------------------
 # Nota: Ubuntu 24.04 usa libssl3 por defecto.
-RUN apt-get update && \
+RUN sed -i 's|http://archive.ubuntu.com|http://ubuntu.unc.edu.ar|g' /etc/apt/sources.list.d/ubuntu.sources && \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         ca-certificates \
