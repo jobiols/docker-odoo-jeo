@@ -8,8 +8,11 @@ COPY ./extract_site-packages.sh /
 COPY ./extract_src.sh /
 
 # install wdb
-RUN git clone https://@github.com/jobiols/wdb.git /opt/wdb \
-    && pip install --no-cache-dir  /opt/wdb/client \
-    && rm -rf /opt/wdb
+RUN /odoo/venv/bin/pip install --no-cache-dir \
+    https://github.com/jobiols/wdb/archive/refs/heads/master.tar.gz#subdirectory=client
+
+# sin esto no anda el wdb
+RUN pip install --break-system-packages debugpy
+
 
 USER odoo

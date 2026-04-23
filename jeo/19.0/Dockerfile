@@ -132,8 +132,8 @@ RUN addgroup --gid 1100 odoo && \
             --shell /bin/bash --home ${ODOO_HOME} --gecos "ODOO" odoo
 
 # Copiar artefactos compilados desde el builder
-COPY --from=builder ${VENV_PATH}            ${VENV_PATH}
-COPY --from=builder ${ODOO_HOME}/odoo-src   ${ODOO_HOME}/odoo-src
+COPY --from=builder --chown=odoo:odoo ${VENV_PATH}            ${VENV_PATH}
+COPY --from=builder --chown=odoo:odoo ${ODOO_HOME}/odoo-src   ${ODOO_HOME}/odoo-src
 COPY --from=builder /usr/local/lib/node_modules   /usr/local/lib/node_modules
 COPY --from=builder /usr/local/bin/rtlcss         /usr/local/bin/rtlcss
 
@@ -145,8 +145,7 @@ ENV BKP_DIR=/var/odoo/backups
 ENV ADDONS_DIR=/opt/odoo/custom-addons
 ENV ODOO_RC=${ETC_DIR}/odoo.conf
 
-RUN mkdir -p ${ETC_DIR} ${DATA_DIR} ${ADDONS_DIR} ${BKP_DIR} ${LOG_DIR} /var/odoo && \
-    chown -R odoo:odoo /opt/odoo ${LOG_DIR} /var/odoo ${ODOO_HOME}
+RUN mkdir -p ${ETC_DIR} ${DATA_DIR} ${ADDONS_DIR} ${BKP_DIR} ${LOG_DIR} /var/odoo
 
 COPY entrypoint.sh /
 COPY odoo.conf ${ETC_DIR}/
