@@ -133,9 +133,7 @@ RUN \
     && chown -R odoo.odoo /var/odoo
 
 # instalar el ultimo pip
-RUN curl -fsSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
-    && python3 get-pip.py \
-    && rm get-pip.py
+RUN pip install --upgrade pip
 
 RUN apt-get -qq update && apt-get install -yqq --no-install-recommends \
     git python3-dev build-essential swig
