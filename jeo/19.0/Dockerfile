@@ -68,9 +68,6 @@ RUN if [ -f /req/requirements.txt ]; then \
     fi && rm -rf /req
 
 # Instalar wasd wheel
-COPY wasd-1.0.0-py3-none-any.whl /tmp/
-RUN pip install --no-cache-dir /tmp/wasd-1.0.0-py3-none-any.whl && \
-    rm /tmp/wasd-1.0.0-py3-none-any.whl
 
 # Instalar rtlcss y limpiar cache de npm
 RUN npm install -g rtlcss && npm cache clean --force
